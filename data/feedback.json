@@ -1,6 +1,21 @@
 {
   "posts": [
     {
+      "id": "fb-1779656056839",
+      "category": "improvement",
+      "utilityId": "hyot-memory-clean",
+      "utilityName": "램쉼 RamShim",
+      "platformId": "windows",
+      "platformLabel": "Windows",
+      "fileName": "RamShim-1.0.0.exe",
+      "utilityLabel": "램쉼 RamShim — Windows (RamShim-1.0.0.exe)",
+      "title": "[개선사항] 램쉼 RamShim — Windows (RamShim-1.0.0.exe)",
+      "body": "SDFSDFSDSDFDFSDFSDAFSDF",
+      "author": "익명",
+      "createdAt": "2026-05-24T20:54:16.839Z",
+      "status": "open"
+    },
+    {
       "body": "worker relay test message ok",
       "id": "test-probe-8",
       "title": "probe"
