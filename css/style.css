@@ -302,7 +302,7 @@ a {
 }
 
 .utility-card__desc {
-  font-size: calc(0.875rem + 1pt);
+  font-size: calc(0.875rem + 0.5pt);
   color: var(--text-secondary);
   line-height: 1.55;
   display: -webkit-box;
