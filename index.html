@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HyoT의 자료실 — 업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
+  <meta name="theme-color" content="#0c0f1a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="HyoT의 자료실">
+  <meta property="og:description" content="업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
+  <meta property="og:locale" content="ko_KR">
+  <title>HyoT의 자료실</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <div>
+          <h1 class="brand__title" id="site-title">HyoT의 자료실</h1>
+          <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <div class="container">
+      <section class="intro" aria-labelledby="intro-heading">
+        <h2 id="intro-heading" class="visually-hidden">자료 목록</h2>
+        <p class="intro__text" id="site-description">
+          관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다.
+        </p>
+      </section>
+
+      <div class="toolbar">
+        <label class="search" for="search-input">
+          <span class="visually-hidden">유틸리티 검색</span>
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M20 20l-3-3" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="search-input"
+            class="search__input"
+            type="search"
+            placeholder="이름·설명으로 검색"
+            autocomplete="off"
+            enterkeyhint="search"
+          >
+        </label>
+        <p id="result-count" class="toolbar__count" aria-live="polite"></p>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <ul id="utility-grid" class="utility-grid" role="list"></ul>
+
+      <p id="empty-state" class="empty-state" hidden>등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="site-footer__copy">&copy; <span id="footer-year"></span> HyoT의 자료실</p>
+    </div>
+  </footer>
+
+  <script src="js/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "site": {
+    "title": "HyoT의 자료실",
+    "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
+    "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
+  },
+  "utilities": [
+    {
+      "id": "sample-screenshot",
+      "name": "화면 캡쳐 도구",
+      "description": "영역 지정 캡쳐와 클립보드 저장을 지원하는 경량 캡쳐 유틸리티입니다.",
+      "updatedAt": "2026-05-24",
+      "version": "0.1.0",
+      "fileSize": "1 KB",
+      "file": "downloads/sample-screenshot.zip",
+      "fileName": "hyot-screenshot.zip"
+    },
+    {
+      "id": "sample-pdf-merge",
+      "name": "PDF 병합기",
+      "description": "여러 PDF를 드래그 한 번으로 합치는 간단한 병합 도구입니다.",
+      "updatedAt": "2026-05-20",
+      "version": "0.1.0",
+      "fileSize": "1 KB",
+      "file": "downloads/sample-pdf-merge.zip",
+      "fileName": "hyot-pdf-merge.zip"
+    },
+    {
+      "id": "sample-memory-clean",
+      "name": "메모리 정리",
+      "description": "작업 메모리 사용량을 줄여 PC 반응 속도를 돕는 경량 정리 유틸입니다.",
+      "updatedAt": "2026-05-15",
+      "version": "0.1.0",
+      "fileSize": "1 KB",
+      "file": "downloads/sample-memory-clean.zip",
+      "fileName": "hyot-memory-clean.zip"
+    }
+  ]
+}
