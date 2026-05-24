@@ -12,7 +12,6 @@ const {
   createPlatformIcon,
   createFileIcon,
   createUtilityIcon,
-  getCardFileKind,
   getFileKindFromPlatformFile,
 } = window.HYOT_PLATFORMS;
 
@@ -98,7 +97,7 @@ function createPlatformButton(item, platform) {
   const pf = getPlatformFile(item, platform.id);
 
   const inner = document.createDocumentFragment();
-  inner.appendChild(createUtilityIcon(item, "btn-platform__file-icon"));
+  inner.appendChild(createPlatformIcon(platform.id));
 
   if (pf) {
     const text = document.createElement("span");
@@ -141,10 +140,7 @@ function createPlatformButton(item, platform) {
   missing.textContent = "준비 중";
 
   text.append(fileName, missing);
-  inner.append(
-    createPlatformIcon(platform.id),
-    text
-  );
+  inner.appendChild(text);
 
   const span = document.createElement("span");
   span.className = `btn-platform btn-platform--${platform.id} btn-platform--missing`;
