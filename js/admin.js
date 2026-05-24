@@ -426,8 +426,13 @@
     return res.status === 204 ? null : res.json();
   }
 
-  async function readJson() {
-    const ref = encodeURIComponent(cfg.github.branch);
+  function deployBranches() {
+    const primary = String(cfg.github.branch || "main").trim() || "main";
+    return [...new Set([primary, "gh-pages"])];
+  }
+
+  async function readJson(branch = cfg.github.branch) {
+    const ref = encodeURIComponent(branch);
     const data = await api(
       `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${cfg.dataPath}?ref=${ref}`
     );
@@ -446,12 +451,12 @@
     return btoa(binary);
   }
 
-  async function writeJson(json, sha, message) {
+  async function writeJson(json, sha, message, branch = cfg.github.branch) {
     const text = JSON.stringify(json, null, 2) + "\n";
     const body = {
       message,
       content: uint8ToBase64(new TextEncoder().encode(text)),
-      branch: cfg.github.branch,
+      branch,
       sha,
     };
     await api(
@@ -468,19 +473,25 @@
   /** 최신 SHA를 읽어 저장. 동시 수정·자동 push 등으로 SHA가 바뀌면 재시도 */
   async function persistCatalogChange(mutator, message, maxAttempts = 5) {
     let lastErr;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        const { json, sha } = await readJson();
-        const next = mutator(json);
-        await writeJson(next, sha, message);
-        return next;
-      } catch (err) {
-        lastErr = err;
-        if (!isShaConflictError(err) || attempt === maxAttempts - 1) throw err;
-        await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
+    let nextForUi = null;
+    const branches = deployBranches();
+    for (const branch of branches) {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const { json, sha } = await readJson(branch);
+          const next = mutator(json);
+          await writeJson(next, sha, message, branch);
+          if (branch === cfg.github.branch) nextForUi = next;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (!isShaConflictError(err) || attempt === maxAttempts - 1) throw err;
+          await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
+        }
       }
     }
-    throw lastErr;
+    if (!nextForUi && lastErr) throw lastErr;
+    return nextForUi;
   }
 
   function repoPath() {
