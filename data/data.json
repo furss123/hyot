@@ -3,7 +3,10 @@
     "title": "HyoT의 자료실",
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다.",
-    "recentWorkIds": ["hyot-archive-site", "hyot-memory-clean"]
+    "recentWorkIds": [
+      "hyot-archive-site",
+      "hyot-memory-clean"
+    ]
   },
   "utilities": [
     {
@@ -67,17 +70,6 @@
       "windows": {
         "file": "downloads/hyot-log-analyzer-v1.0.exe",
         "fileName": "hyot-log-analyzer-v1.0.exe",
-        "fileSize": "50.0 MB"
-      }
-    },
-    {
-      "id": "hyot-csv-toolkit",
-      "name": "HyoT CSV 툴킷",
-      "description": "CSV 인코딩 변환, 열 정리, 중복 제거, 엑셀보내기를 지원합니다.",
-      "updatedAt": "2026-05-20T10:20:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-csv-toolkit-v2.4.exe",
-        "fileName": "hyot-csv-toolkit-v2.4.exe",
         "fileSize": "50.0 MB"
       }
     },
