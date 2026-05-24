@@ -1658,6 +1658,36 @@ textarea.admin-field__input {
   padding: 1.5rem 0.5rem;
 }
 
+/* ── Admin feedback auth ─────────────────────────────────── */
+.admin-feedback-auth {
+  max-width: 22rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-feedback-auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-feedback-auth__signout {
+  margin-bottom: 1rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-glass);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.admin-feedback-auth__signout:hover {
+  color: var(--text-primary);
+  border-color: var(--border-glow);
+}
+
 /* ── Admin feedback ──────────────────────────────────────── */
 .admin-tabs {
   display: flex;

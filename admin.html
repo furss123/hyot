@@ -191,9 +191,26 @@
 
         <section id="admin-feedback-view" class="admin-tab-panel admin-feedback-panel is-hidden" hidden aria-label="의견 게시판 관리">
           <p id="admin-feedback-status" class="admin-toast" role="status" hidden></p>
-          <p class="admin-hint admin-feedback-panel__hint">메인 페이지 하단 게시판에 표시되는 의견입니다. 처리 완료·숨기기·삭제할 수 있습니다.</p>
-          <ul id="admin-feedback-list" class="admin-feedback-list" role="list"></ul>
-          <p id="admin-feedback-empty" class="admin-list-empty">등록된 의견이 없습니다.</p>
+          <div id="admin-feedback-auth" class="admin-feedback-auth">
+            <form id="admin-feedback-auth-form" class="admin-feedback-auth__form">
+              <p class="admin-hint">게시판 관리용 Firebase 계정으로 로그인합니다. (Firebase 콘솔에서 이메일/비밀번호 사용자 생성)</p>
+              <label class="admin-field">
+                <span class="admin-field__label">이메일</span>
+                <input id="admin-feedback-email" class="admin-field__input" type="email" autocomplete="username" required>
+              </label>
+              <label class="admin-field">
+                <span class="admin-field__label">비밀번호</span>
+                <input id="admin-feedback-password" class="admin-field__input" type="password" autocomplete="current-password" required>
+              </label>
+              <button type="submit" class="btn-download">게시판 관리 로그인</button>
+            </form>
+          </div>
+          <button type="button" id="admin-feedback-signout" class="admin-feedback-auth__signout" hidden>게시판 로그아웃</button>
+          <div id="admin-feedback-list-wrap" hidden>
+            <p class="admin-hint admin-feedback-panel__hint">메인 페이지 하단 게시판에 표시되는 의견입니다. 처리 완료·숨기기·삭제할 수 있습니다.</p>
+            <ul id="admin-feedback-list" class="admin-feedback-list" role="list"></ul>
+            <p id="admin-feedback-empty" class="admin-list-empty">등록된 의견이 없습니다.</p>
+          </div>
         </section>
       </section>
 
@@ -210,6 +227,11 @@
 
   <script src="js/theme.js"></script>
   <script src="js/admin-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-feedback.js"></script>
   <script src="js/feedback-config.js"></script>
   <script src="js/admin-auth.js"></script>
   <script src="js/platforms.js"></script>

@@ -1,4 +1,1 @@
-/** 배포 시 GitHub Actions가 덮어씁니다 */
-window.HYOT_FEEDBACK_TOKEN_B64 = "";
-window.HYOT_FEEDBACK_TOKEN = null;
-window.HYOT_FEEDBACK_INGEST_KEY = null;
+/** 더 이상 사용하지 않습니다. 의견 게시판은 Firebase Firestore를 사용합니다. */

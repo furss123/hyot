@@ -31,32 +31,38 @@ jobs:
               `window.HYOT_ADMIN_SECRETS=${JSON.stringify(payload)};\n`
             );
           }
-          const feedbackToken = process.env.HYOT_FEEDBACK_TOKEN || "";
-          const ingestKey = process.env.FEEDBACK_INGEST_KEY || "";
-          const lines = ["/** Deploy-time only — not committed on main */"];
-          if (feedbackToken) {
-            const b64 = Buffer.from(feedbackToken, "utf8").toString("base64");
-            lines.push(`window.HYOT_FEEDBACK_TOKEN_B64=${JSON.stringify(b64)};`);
-            lines.push(
-              "window.HYOT_FEEDBACK_TOKEN=typeof atob!=='undefined'?atob(window.HYOT_FEEDBACK_TOKEN_B64):'';"
-            );
-          } else {
-            lines.push("window.HYOT_FEEDBACK_TOKEN_B64='';");
-            lines.push("window.HYOT_FEEDBACK_TOKEN=null;");
-            console.log("::warning::HYOT_FEEDBACK_TOKEN not set.");
+          const fb = {
+            apiKey: process.env.HYOT_FIREBASE_API_KEY || "",
+            authDomain: process.env.HYOT_FIREBASE_AUTH_DOMAIN || "",
+            projectId: process.env.HYOT_FIREBASE_PROJECT_ID || "",
+            storageBucket: process.env.HYOT_FIREBASE_STORAGE_BUCKET || "",
+            messagingSenderId: process.env.HYOT_FIREBASE_MESSAGING_SENDER_ID || "",
+            appId: process.env.HYOT_FIREBASE_APP_ID || "",
+            collection: "feedback_posts",
+          };
+          if (!fb.projectId || !fb.apiKey || !fb.appId) {
+            console.log("::warning::Firebase config incomplete. Set HYOT_FIREBASE_* secrets.");
           }
-          if (ingestKey) {
-            lines.push(`window.HYOT_FEEDBACK_INGEST_KEY=${JSON.stringify(ingestKey)};`);
-          } else {
-            lines.push("window.HYOT_FEEDBACK_INGEST_KEY=null;");
+          if (!fb.authDomain && fb.projectId) {
+            fb.authDomain = `${fb.projectId}.firebaseapp.com`;
           }
-          fs.writeFileSync("js/feedback-auth.js", lines.join("\n") + "\n");
+          if (!fb.storageBucket && fb.projectId) {
+            fb.storageBucket = `${fb.projectId}.appspot.com`;
+          }
+          fs.writeFileSync(
+            "js/firebase-config.js",
+            `/** Deploy-time — see docs/feedback-firebase-setup.md */\nwindow.HYOT_FIREBASE_CONFIG=${JSON.stringify(fb, null, 2)};\n`
+          );
           NODE
         env:
           HYOT_ADMIN_ID: ${{ secrets.HYOT_ADMIN_ID }}
           HYOT_ADMIN_PASSWORD_SHA256: ${{ secrets.HYOT_ADMIN_PASSWORD_SHA256 }}
-          HYOT_FEEDBACK_TOKEN: ${{ secrets.HYOT_FEEDBACK_TOKEN }}
-          FEEDBACK_INGEST_KEY: ${{ secrets.FEEDBACK_INGEST_KEY }}
+          HYOT_FIREBASE_API_KEY: ${{ secrets.HYOT_FIREBASE_API_KEY }}
+          HYOT_FIREBASE_AUTH_DOMAIN: ${{ secrets.HYOT_FIREBASE_AUTH_DOMAIN }}
+          HYOT_FIREBASE_PROJECT_ID: ${{ secrets.HYOT_FIREBASE_PROJECT_ID }}
+          HYOT_FIREBASE_STORAGE_BUCKET: ${{ secrets.HYOT_FIREBASE_STORAGE_BUCKET }}
+          HYOT_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.HYOT_FIREBASE_MESSAGING_SENDER_ID }}
+          HYOT_FIREBASE_APP_ID: ${{ secrets.HYOT_FIREBASE_APP_ID }}
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4

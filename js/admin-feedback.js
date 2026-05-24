@@ -1,13 +1,10 @@
 /**
- * HyoT 관리자 — 의견 게시판 관리
+ * HyoT 관리자 — 의견 게시판 (Firebase)
  */
 (function () {
-  const cfg = window.HYOT_ADMIN_CONFIG;
   const feedbackCfg = window.HYOT_FEEDBACK_CONFIG;
-  if (!cfg || !feedbackCfg) return;
-
-  const STORAGE_TOKEN = "hyot_github_token";
-  const $ = (id) => document.getElementById(id);
+  const fb = window.HyotFirebaseFeedback;
+  if (!feedbackCfg || !fb) return;
 
   const els = {
     tabCatalog: document.querySelector('[data-admin-tab="catalog"]'),
@@ -17,6 +14,12 @@
     feedbackList: document.getElementById("admin-feedback-list"),
     feedbackEmpty: document.getElementById("admin-feedback-empty"),
     feedbackStatus: document.getElementById("admin-feedback-status"),
+    authPanel: document.getElementById("admin-feedback-auth"),
+    authForm: document.getElementById("admin-feedback-auth-form"),
+    authEmail: document.getElementById("admin-feedback-email"),
+    authPassword: document.getElementById("admin-feedback-password"),
+    authSignOut: document.getElementById("admin-feedback-signout"),
+    listWrap: document.getElementById("admin-feedback-list-wrap"),
   };
 
   if (!els.feedbackView) return;
@@ -26,102 +29,13 @@
   );
 
   let feedbackData = { posts: [] };
-
-  function getToken() {
-    return sessionStorage.getItem(STORAGE_TOKEN) || "";
-  }
+  let firebaseReady = false;
 
   function setFeedbackStatus(message, isError = false) {
     if (!els.feedbackStatus) return;
     els.feedbackStatus.textContent = message;
     els.feedbackStatus.classList.toggle("admin-toast--error", isError);
     els.feedbackStatus.hidden = !message;
-  }
-
-  function deployBranches() {
-    const primary = String(cfg.github.branch || "main").trim() || "main";
-    return [...new Set([primary, "gh-pages"])];
-  }
-
-  function uint8ToBase64(bytes) {
-    let binary = "";
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-    }
-    return btoa(binary);
-  }
-
-  async function api(path, options = {}) {
-    const token = getToken();
-    if (!token) throw new Error("로그인이 필요합니다.");
-    const headers = {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    };
-    const res = await fetch(`https://api.github.com${path}`, { ...options, headers });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try {
-        const err = await res.json();
-        if (err?.message) msg = err.message;
-      } catch {
-        /* ignore */
-      }
-      throw new Error(msg);
-    }
-    return res.status === 204 ? null : res.json();
-  }
-
-  async function readFeedback(branch) {
-    const ref = encodeURIComponent(branch);
-    const data = await api(
-      `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${feedbackCfg.dataPath}?ref=${ref}`
-    );
-    const text = new TextDecoder().decode(
-      Uint8Array.from(atob(data.content.replace(/\s/g, "")), (c) => c.charCodeAt(0))
-    );
-    return { json: JSON.parse(text), sha: data.sha };
-  }
-
-  async function writeFeedback(json, sha, message, branch) {
-    const text = JSON.stringify(json, null, 2) + "\n";
-    const body = {
-      message,
-      content: uint8ToBase64(new TextEncoder().encode(text)),
-      branch,
-      sha,
-    };
-    await api(
-      `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${feedbackCfg.dataPath}`,
-      { method: "PUT", body: JSON.stringify(body) }
-    );
-  }
-
-  function isShaConflict(err) {
-    return /does not match|sha was supplied|409|Conflict/i.test(String(err?.message || err));
-  }
-
-  async function persistFeedback(mutator, message) {
-    const branches = deployBranches();
-    let nextForUi = null;
-    for (const branch of branches) {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-          const { json, sha } = await readFeedback(branch);
-          const next = mutator(json);
-          await writeFeedback(next, sha, message, branch);
-          if (branch === cfg.github.branch) nextForUi = next;
-          break;
-        } catch (err) {
-          if (!isShaConflict(err) || attempt === 4) throw err;
-          await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
-        }
-      }
-    }
-    return nextForUi;
   }
 
   function formatDate(iso) {
@@ -134,6 +48,13 @@
       hour: "2-digit",
       minute: "2-digit",
     }).format(d);
+  }
+
+  function updateAuthUi() {
+    const authed = fb.isAdmin();
+    if (els.authPanel) els.authPanel.hidden = authed;
+    if (els.listWrap) els.listWrap.hidden = !authed;
+    if (els.authSignOut) els.authSignOut.hidden = !authed;
   }
 
   function renderFeedbackList() {
@@ -233,12 +154,19 @@
   }
 
   async function loadFeedback() {
+    if (!firebaseReady) {
+      setFeedbackStatus("Firebase 설정이 필요합니다.", true);
+      return;
+    }
+    if (!fb.isAdmin()) {
+      updateAuthUi();
+      return;
+    }
+
     setFeedbackStatus("불러오는 중…");
     try {
-      const res = await fetch(feedbackCfg.dataPath, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      feedbackData = await res.json();
-      if (!Array.isArray(feedbackData.posts)) feedbackData = { posts: [] };
+      const posts = await fb.listPosts({ includeHidden: true });
+      feedbackData = { posts };
       renderFeedbackList();
       setFeedbackStatus("");
     } catch (err) {
@@ -248,16 +176,10 @@
   }
 
   async function updatePostStatus(id, status) {
-    if (!getToken()) return;
+    if (!fb.isAdmin()) return;
     try {
-      feedbackData = await persistFeedback((json) => {
-        const posts = Array.isArray(json.posts) ? json.posts : [];
-        const idx = posts.findIndex((p) => p.id === id);
-        if (idx === -1) throw new Error("항목을 찾을 수 없습니다.");
-        posts[idx] = { ...posts[idx], status };
-        return { posts };
-      }, `feedback: update ${id} → ${status}`);
-      renderFeedbackList();
+      await fb.updatePost(id, { status });
+      await loadFeedback();
       setFeedbackStatus("저장되었습니다.");
     } catch (err) {
       setFeedbackStatus(err.message || "저장 실패", true);
@@ -267,14 +189,28 @@
   async function deletePost(id) {
     if (!confirm("이 의견을 삭제하시겠습니까?")) return;
     try {
-      feedbackData = await persistFeedback((json) => {
-        const posts = (Array.isArray(json.posts) ? json.posts : []).filter((p) => p.id !== id);
-        return { posts };
-      }, `feedback: delete ${id}`);
-      renderFeedbackList();
+      await fb.deletePost(id);
+      await loadFeedback();
       setFeedbackStatus("삭제되었습니다.");
     } catch (err) {
       setFeedbackStatus(err.message || "삭제 실패", true);
+    }
+  }
+
+  async function onAuthSubmit(event) {
+    event.preventDefault();
+    const email = els.authEmail?.value?.trim();
+    const password = els.authPassword?.value || "";
+    if (!email || !password) {
+      setFeedbackStatus("이메일과 비밀번호를 입력하세요.", true);
+      return;
+    }
+    try {
+      await fb.signInAdmin(email, password);
+      setFeedbackStatus("");
+      await loadFeedback();
+    } catch (err) {
+      setFeedbackStatus("로그인에 실패했습니다. Firebase 계정을 확인하세요.", true);
     }
   }
 
@@ -291,8 +227,37 @@
     if (isFeedback) loadFeedback();
   }
 
+  async function boot() {
+    if (!fb.isConfigured()) {
+      setFeedbackStatus("Firebase 설정이 없습니다. docs/feedback-firebase-setup.md", true);
+      return;
+    }
+    try {
+      await fb.init();
+      firebaseReady = true;
+      fb.onAuthChange(() => {
+        updateAuthUi();
+        if (document.querySelector('[data-admin-tab="feedback"]')?.classList.contains("is-active")) {
+          loadFeedback();
+        }
+      });
+      updateAuthUi();
+    } catch (err) {
+      console.error(err);
+      setFeedbackStatus("Firebase 연결 실패", true);
+    }
+  }
+
+  els.authForm?.addEventListener("submit", onAuthSubmit);
+  els.authSignOut?.addEventListener("click", async () => {
+    await fb.signOutAdmin();
+    updateAuthUi();
+    setFeedbackStatus("");
+  });
+
   els.tabCatalog?.addEventListener("click", () => switchTab("catalog"));
   els.tabFeedback?.addEventListener("click", () => switchTab("feedback"));
 
   window.HyotAdminFeedback = { reload: loadFeedback, switchTab };
+  boot();
 })();

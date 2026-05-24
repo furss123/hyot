@@ -94,7 +94,7 @@
           </label>
 
           <p id="feedback-ready-hint" class="feedback-form__hint feedback-form__hint--ok" hidden>
-            GitHub 로그인 없이 바로 등록할 수 있습니다.
+            로그인 없이 바로 등록할 수 있습니다.
           </p>
           <p id="feedback-setup-hint" class="feedback-form__hint" hidden>
             게시판 등록 준비 중입니다. 관리자에게 문의해 주세요.
@@ -124,9 +124,13 @@
 
   <script src="js/theme.js?v=20260524"></script>
   <script src="js/platforms.js?v=20260524"></script>
-  <script src="js/feedback-config.js?v=20260524"></script>
-  <script src="js/feedback-auth.js?v=20260524"></script>
-  <script src="js/feedback.js?v=20260524" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js?v=20260525"></script>
+  <script src="js/firebase-feedback.js?v=20260525"></script>
+  <script src="js/feedback-config.js?v=20260525"></script>
+  <script src="js/feedback.js?v=20260525" defer></script>
   <script src="js/app.js?v=20260524" defer></script>
   <script>
     if (sessionStorage.getItem("hyot_admin_session") === "1") {

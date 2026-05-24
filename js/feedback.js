@@ -1,17 +1,11 @@
 /**
- * HyoT — 의견 게시판 (개선·버그 제보)
+ * HyoT — 의견 게시판 (Firebase Firestore)
  */
 (function () {
   const cfg = window.HYOT_FEEDBACK_CONFIG;
-  if (!cfg) return;
+  const fb = window.HyotFirebaseFeedback;
+  if (!cfg || !fb) return;
 
-  const gh = cfg.github;
-  const token =
-    window.HYOT_FEEDBACK_TOKEN ||
-    (window.HYOT_FEEDBACK_TOKEN_B64 && typeof atob !== "undefined"
-      ? atob(window.HYOT_FEEDBACK_TOKEN_B64)
-      : null);
-  const ingestKey = window.HYOT_FEEDBACK_INGEST_KEY;
   const COOLDOWN_KEY = "hyot_feedback_last_submit";
 
   const platforms = window.HYOT_PLATFORMS || {};
@@ -34,7 +28,7 @@
 
   if (!els.form) return;
 
-  let tokenUsable = Boolean(token);
+  let boardReady = false;
 
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
@@ -62,223 +56,16 @@
     }).format(d);
   }
 
-  function deployBranches() {
-    const primary = String(gh.branch || "main").trim() || "main";
-    return [...new Set([primary, "gh-pages"])];
+  function refreshSubmitButton(hasOptions = utilityTargets.size > 0) {
+    if (!els.submit) return;
+    els.submit.disabled = !hasOptions || !boardReady;
   }
 
-  function uint8ToBase64(bytes) {
-    let binary = "";
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-    }
-    return btoa(binary);
-  }
-
-  async function api(path, options = {}, authToken = token) {
-    const headers = {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(options.headers || {}),
-    };
-    if (authToken) headers.Authorization = `Bearer ${authToken}`;
-    const res = await fetch(`https://api.github.com${path}`, { ...options, headers });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try {
-        const err = await res.json();
-        if (err?.message) msg = err.message;
-      } catch {
-        /* ignore */
-      }
-      throw new Error(msg);
-    }
-    return res.status === 204 ? null : res.json();
-  }
-
-  async function readFeedback(branch = gh.branch) {
-    const ref = encodeURIComponent(branch);
-    const data = await api(
-      `/repos/${gh.owner}/${gh.repo}/contents/${cfg.dataPath}?ref=${ref}`,
-      {},
-      token || undefined
-    );
-    const text = new TextDecoder().decode(
-      Uint8Array.from(atob(data.content.replace(/\s/g, "")), (c) => c.charCodeAt(0))
-    );
-    const json = JSON.parse(text);
-    return { json, sha: data.sha };
-  }
-
-  async function writeFeedback(json, sha, message, branch, authToken) {
-    const text = JSON.stringify(json, null, 2) + "\n";
-    const body = {
-      message,
-      content: uint8ToBase64(new TextEncoder().encode(text)),
-      branch,
-      sha,
-    };
-    await api(
-      `/repos/${gh.owner}/${gh.repo}/contents/${cfg.dataPath}`,
-      { method: "PUT", body: JSON.stringify(body) },
-      authToken
-    );
-  }
-
-  function isShaConflict(err) {
-    return /does not match|sha was supplied|409|Conflict/i.test(String(err?.message || err));
-  }
-
-  async function persistNewPost(post) {
-    if (!token) throw new Error("NO_TOKEN");
-    const branches = deployBranches();
-    for (const branch of branches) {
-      for (let attempt = 0; attempt < 4; attempt++) {
-        try {
-          const { json, sha } = await readFeedback(branch);
-          const posts = Array.isArray(json.posts) ? json.posts : [];
-          posts.unshift(post);
-          await writeFeedback({ posts }, sha, `feedback: ${post.title}`, branch, token);
-          break;
-        } catch (err) {
-          if (!isShaConflict(err) || attempt === 3) throw err;
-          await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
-        }
-      }
-    }
-  }
-
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  async function submitViaWorkflowDispatch(post) {
-    if (!ingestKey || !token) throw new Error("FEEDBACK_NOT_CONFIGURED");
-    const res = await fetch(
-      `https://api.github.com/repos/${gh.owner}/${gh.repo}/actions/workflows/feedback-ingest.yml/dispatches`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ref: gh.branch || "main",
-          inputs: {
-            payload_json: JSON.stringify(post),
-            ingest_key: ingestKey,
-          },
-        }),
-      }
-    );
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try {
-        const err = await res.json();
-        if (err?.message) msg = err.message;
-      } catch {
-        /* ignore */
-      }
-      throw new Error(msg);
-    }
-  }
-
-  async function submitViaDispatch(post) {
-    const res = await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/dispatches`, {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        event_type: "hyot_feedback_submit",
-        client_payload: post,
-      }),
-    });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try {
-        const err = await res.json();
-        if (err?.message) msg = err.message;
-      } catch {
-        /* ignore */
-      }
-      throw new Error(msg);
-    }
-  }
-
-  async function pollForPost(postId, timeoutMs = 90000) {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      const res = await fetch(cfg.dataPath, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        const posts = Array.isArray(data.posts) ? data.posts : [];
-        if (posts.some((p) => p.id === postId)) return true;
-      }
-      await sleep(2500);
-    }
-    throw new Error("POLL_TIMEOUT");
-  }
-
-  function isAuthError(err) {
-    return /(^HTTP 401$|Bad credentials|401)/i.test(String(err?.message || err));
-  }
-
-  function isActionsError(err) {
-    return /(^HTTP 403$|403|actions|workflow)/i.test(String(err?.message || err));
-  }
-
-  async function submitFeedback(post) {
-    if (!token) throw new Error("FEEDBACK_NOT_CONFIGURED");
-
-    try {
-      await persistNewPost(post);
-      return;
-    } catch (err) {
-      console.warn("[HyoT feedback] direct save failed:", err);
-      if (isAuthError(err)) throw err;
-    }
-
-    if (ingestKey) {
-      try {
-        await submitViaWorkflowDispatch(post);
-        await pollForPost(post.id);
-        return;
-      } catch (err) {
-        console.warn("[HyoT feedback] workflow ingest failed:", err);
-        if (isAuthError(err)) throw err;
-      }
-    }
-
-    try {
-      await submitViaDispatch(post);
-      await pollForPost(post.id);
-    } catch (err) {
-      console.warn("[HyoT feedback] repository dispatch failed:", err);
-      throw err;
-    }
-  }
-
-  async function probeToken() {
-    if (!token) return false;
-    try {
-      const res = await fetch("https://api.github.com/user", {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
+  function updateSubmitMode() {
+    if (els.readyHint) els.readyHint.hidden = !boardReady;
+    if (els.setupHint) els.setupHint.hidden = boardReady;
+    if (els.submit) els.submit.textContent = "의견 등록";
+    refreshSubmitButton();
   }
 
   function buildUtilityTargets(utilities = []) {
@@ -361,19 +148,6 @@
     }
   }
 
-  function refreshSubmitButton(hasOptions = utilityTargets.size > 0) {
-    if (!els.submit) return;
-    els.submit.disabled = !hasOptions || !tokenUsable;
-  }
-
-  function updateSubmitMode() {
-    const ready = tokenUsable && Boolean(token);
-    if (els.readyHint) els.readyHint.hidden = !ready;
-    if (els.setupHint) els.setupHint.hidden = ready;
-    if (els.submit) els.submit.textContent = "의견 등록";
-    refreshSubmitButton();
-  }
-
   function renderPosts(posts) {
     if (!els.list) return;
     const openPosts = posts.filter((p) => p.status !== "hidden");
@@ -417,12 +191,9 @@
   }
 
   async function loadPosts() {
+    if (!boardReady) return;
     try {
-      const res = await fetch(cfg.dataPath, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const posts = Array.isArray(data.posts) ? data.posts : [];
-      posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const posts = await fb.listPosts();
       renderPosts(posts);
     } catch (err) {
       console.error("[HyoT feedback]", err);
@@ -480,6 +251,11 @@
     event.preventDefault();
     setStatus("");
 
+    if (!boardReady) {
+      setStatus("게시판이 아직 연결되지 않았습니다. docs/feedback-firebase-setup.md 를 참고해 주세요.", true);
+      return;
+    }
+
     const last = Number(sessionStorage.getItem(COOLDOWN_KEY) || 0);
     if (Date.now() - last < cfg.limits.submitCooldownMs) {
       setStatus("잠시 후 다시 등록해 주세요. (1분 간격)", true);
@@ -492,16 +268,8 @@
     els.submit.disabled = true;
 
     try {
-      if (!token) {
-        setStatus(
-          "지금은 바로 등록할 수 없습니다. 관리자가 게시판 설정을 완료하면 이용할 수 있습니다.",
-          true
-        );
-        return;
-      }
-
       setStatus("등록 중입니다… 잠시만 기다려 주세요.");
-      await submitFeedback(post);
+      await fb.addPost(post);
       sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       els.form.reset();
       await loadCatalog();
@@ -509,47 +277,40 @@
       await loadPosts();
     } catch (err) {
       console.error("[HyoT feedback submit]", err);
-      if (String(err.message) === "FEEDBACK_NOT_CONFIGURED") {
-        setStatus("게시판 등록이 아직 준비되지 않았습니다.", true);
-      } else if (isAuthError(err)) {
-        setStatus(
-          "등록 서비스 토큰이 만료되었거나 무효합니다. 저장소 관리자가 HYOT_FEEDBACK_TOKEN을 갱신한 뒤 Pages를 다시 배포해야 합니다.",
-          true
-        );
-        tokenUsable = false;
-        updateSubmitMode();
-      } else if (isActionsError(err)) {
-        setStatus(
-          "등록에 실패했습니다. GitHub 토큰에 Actions(워크플로) 쓰기 권한이 필요합니다. docs/feedback-setup.md를 참고해 주세요.",
-          true
-        );
-      } else if (String(err.message) === "POLL_TIMEOUT") {
-        setStatus(
-          "등록 요청은 접수되었습니다. 목록에 잠시 후 표시될 수 있습니다. 새로고침해 보세요.",
-          false
-        );
-        await loadPosts();
+      const code = err?.code || "";
+      if (code === "permission-denied") {
+        setStatus("등록이 거부되었습니다. Firestore 보안 규칙을 확인해 주세요.", true);
       } else {
         setStatus("등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", true);
       }
     } finally {
-      els.submit.disabled = false;
+      refreshSubmitButton();
+    }
+  }
+
+  async function boot() {
+    if (!fb.isConfigured()) {
+      boardReady = false;
+      updateSubmitMode();
+      setStatus("게시판 연결 설정이 필요합니다. (Firebase)", true);
+      return;
+    }
+
+    try {
+      await fb.init();
+      boardReady = true;
+      updateSubmitMode();
+      await loadPosts();
+    } catch (err) {
+      console.error("[HyoT feedback boot]", err);
+      boardReady = false;
+      updateSubmitMode();
+      setStatus("게시판을 불러오지 못했습니다.", true);
     }
   }
 
   updateSubmitMode();
   els.form.addEventListener("submit", onSubmit);
   loadCatalog();
-  loadPosts();
-  probeToken().then((ok) => {
-    if (!token) return;
-    if (!ok) {
-      tokenUsable = false;
-      updateSubmitMode();
-      setStatus(
-        "등록 서비스 연결이 끊어졌습니다. 관리자가 GitHub 토큰(HYOT_FEEDBACK_TOKEN)을 새로 발급·등록한 뒤 배포해야 합니다.",
-        true
-      );
-    }
-  });
+  boot();
 })();
