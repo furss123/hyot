@@ -87,6 +87,32 @@
     return getFileKindFromPlatformFile(getPrimaryPlatformFile(item));
   }
 
+  function getUtilityIconPath(item) {
+    const path = item?.icon;
+    return typeof path === "string" && path.trim() ? path.trim() : "";
+  }
+
+  function createUtilityIcon(item, className = "file-icon") {
+    const path = getUtilityIconPath(item);
+    if (path) {
+      const img = document.createElement("img");
+      img.className = `${className} utility-icon utility-icon--custom`;
+      img.src = path;
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.addEventListener(
+        "error",
+        () => {
+          img.replaceWith(createFileIcon(getCardFileKind(item), className));
+        },
+        { once: true }
+      );
+      return img;
+    }
+    return createFileIcon(getCardFileKind(item), className);
+  }
+
   function createFileIcon(kind, className = "file-icon") {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", `${className} file-icon file-icon--${kind}`);
@@ -138,6 +164,8 @@
     isValidUtility,
     createPlatformIcon,
     createFileIcon,
+    createUtilityIcon,
+    getUtilityIconPath,
     getCardFileKind,
     getFileKindFromPlatformFile,
   };

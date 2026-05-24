@@ -93,6 +93,33 @@
                 <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="짧은 설명"></textarea>
               </label>
 
+              <div class="admin-field">
+                <span class="admin-field__label">아이콘 (선택)</span>
+                <div class="admin-icon-preview-wrap">
+                  <img id="admin-icon-preview" class="admin-icon-preview" hidden alt="">
+                  <span id="admin-icon-preview-empty" class="admin-icon-preview-empty">기본 파일 아이콘 사용</span>
+                </div>
+                <label class="admin-file-btn admin-file-btn--icon">
+                  <input id="admin-icon" class="admin-file-btn__input" type="file" accept=".png,.svg,.webp,.jpg,.jpeg,.ico,image/png,image/svg+xml,image/webp,image/jpeg,image/x-icon">
+                  <span id="admin-icon-display">아이콘 이미지 선택</span>
+                </label>
+                <p class="admin-hint">PNG·SVG·WebP·JPG·ICO · 2MB 이하 · 권장 128×128px</p>
+                <label class="admin-check admin-check--block">
+                  <input type="checkbox" id="admin-icon-remove">
+                  <span>커스텀 아이콘 제거 (기본 아이콘으로)</span>
+                </label>
+                <label class="admin-check admin-check--block">
+                  <input type="checkbox" id="admin-icon-manual">
+                  <span>저장소에 아이콘을 직접 올렸음</span>
+                </label>
+                <div id="admin-icon-manual-wrap" class="admin-file-manual-wrap" hidden>
+                  <label class="admin-field admin-field--nested">
+                    <span class="admin-field__label">아이콘 경로</span>
+                    <input id="admin-icon-path" class="admin-field__input" type="text" placeholder="assets/icons/프로그램.png" autocomplete="off">
+                  </label>
+                </div>
+              </div>
+
               <label class="admin-field">
                 <span class="admin-field__label">업데이트 날짜</span>
                 <input id="admin-updated-at" class="admin-field__input admin-field__input--readonly" type="text" readonly tabindex="-1" aria-readonly="true">

@@ -11,6 +11,7 @@ const {
   isValidUtility,
   createPlatformIcon,
   createFileIcon,
+  createUtilityIcon,
   getCardFileKind,
   getFileKindFromPlatformFile,
 } = window.HYOT_PLATFORMS;
@@ -142,7 +143,7 @@ function createCard(item) {
   nameText.className = "utility-card__name-text";
   nameText.textContent = item.name;
 
-  name.append(createFileIcon(getCardFileKind(item), "utility-card__file-icon"), nameText);
+  name.append(createUtilityIcon(item, "utility-card__file-icon"), nameText);
 
   const desc = document.createElement("p");
   desc.className = "utility-card__desc";

@@ -7,4 +7,5 @@ window.HYOT_ADMIN_CONFIG = {
   },
   dataPath: "data/data.json",
   downloadsPath: "downloads",
+  iconsPath: "assets/icons",
 };

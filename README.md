@@ -82,6 +82,7 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 | `fileName` | 권장 | 브라우저 저장 시 파일명 |
 | `version` | 선택 | 버전 표시 |
 | `fileSize` | 선택 | 용량 표시 |
+| `icon` | 선택 | 카드 제목 아이콘 (`assets/icons/...` · png/svg/webp/jpg/ico) |
 
 3. `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.
 

@@ -22,6 +22,8 @@
 
   /** 브라우저에서 GitHub Contents API 업로드 시도 상한 (50MB 초과는 직접 등록) */
   const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+  const MAX_ICON_BYTES = 2 * 1024 * 1024;
+  const ICON_ACCEPT_RE = /\.(png|svg|webp|jpe?g|ico)$/i;
 
   if (!cfg) return;
 
@@ -51,6 +53,14 @@
     fileManual: $("admin-file-manual"),
     fileManualWrap: $("admin-file-manual-wrap"),
     filePath: $("admin-file-path"),
+    icon: $("admin-icon"),
+    iconDisplay: $("admin-icon-display"),
+    iconPreview: $("admin-icon-preview"),
+    iconPreviewEmpty: $("admin-icon-preview-empty"),
+    iconRemove: $("admin-icon-remove"),
+    iconManual: $("admin-icon-manual"),
+    iconManualWrap: $("admin-icon-manual-wrap"),
+    iconPath: $("admin-icon-path"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
     platformStatus: $("admin-platform-status"),
@@ -156,7 +166,7 @@
     });
   }
 
-  function buildUtilityPayload(base, { name, description, updatedAt, windows, android }) {
+  function buildUtilityPayload(base, { name, description, updatedAt, windows, android, icon }) {
     const out = {
       id: base.id,
       name,
@@ -165,6 +175,7 @@
     };
     if (windows) out.windows = windows;
     if (android) out.android = android;
+    if (icon) out.icon = icon;
     return out;
   }
 
@@ -498,6 +509,103 @@
     return `/repos/${cfg.github.owner}/${cfg.github.repo}`;
   }
 
+  function normalizeIconPath(input) {
+    let path = String(input || "").trim().replace(/^\/+/, "");
+    if (!path) return "";
+    const root = cfg.iconsPath || "assets/icons";
+    if (!path.startsWith(`${root}/`)) {
+      path = path.replace(/^assets\/icons\/?/i, "");
+      path = `${root}/${path}`;
+    }
+    return path;
+  }
+
+  function iconExtFromName(name) {
+    const ext = String(name).split(".").pop().toLowerCase();
+    if (ext === "jpeg") return "jpg";
+    return ext;
+  }
+
+  function buildIconStoragePath(fileName, utilityId) {
+    if (!ICON_ACCEPT_RE.test(fileName)) {
+      throw new Error("아이콘은 png, svg, webp, jpg, ico 파일만 사용할 수 있습니다.");
+    }
+    const safeId =
+      String(utilityId)
+        .replace(/[^a-z0-9-]/g, "")
+        .slice(0, 48) || `item-${Date.now()}`;
+    const ext = iconExtFromName(fileName);
+    return `${cfg.iconsPath || "assets/icons"}/${safeId}.${ext}`;
+  }
+
+  async function verifyIconFile(path) {
+    const ref = encodeURIComponent(cfg.github.branch);
+    const data = await api(`${repoPath()}/contents/${path}?ref=${ref}`);
+    if (data.type && data.type !== "file") {
+      throw new Error("아이콘 경로가 올바르지 않습니다. assets/icons/ 아래 이미지를 지정하세요.");
+    }
+    return { path };
+  }
+
+  async function fileToBase64(file, onProgress) {
+    return new Promise((ok, no) => {
+      const r = new FileReader();
+      r.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(e.loaded / e.total);
+        }
+      };
+      r.onload = () => ok(String(r.result).split(",")[1]);
+      r.onerror = () => no(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function putBinaryOnBranches(path, base64Content, message) {
+    for (const branch of deployBranches()) {
+      let sha = null;
+      try {
+        const ref = encodeURIComponent(branch);
+        const ex = await api(`${repoPath()}/contents/${path}?ref=${ref}`);
+        sha = ex.sha;
+      } catch {
+        /* new file on branch */
+      }
+      await api(`${repoPath()}/contents/${path}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          message: branch === cfg.github.branch ? message : `${message} (${branch})`,
+          content: base64Content,
+          branch,
+          ...(sha ? { sha } : {}),
+        }),
+      });
+    }
+  }
+
+  async function uploadIconFile(file, utilityId) {
+    if (file.size > MAX_ICON_BYTES) {
+      throw new Error("아이콘은 2MB 이하만 업로드할 수 있습니다.");
+    }
+    const path = buildIconStoragePath(file.name, utilityId);
+    const b64 = await fileToBase64(file);
+    await putBinaryOnBranches(path, b64, `icon: ${path.split("/").pop()}`);
+    return { path };
+  }
+
+  async function resolveIconForSave({ base, utilityId }) {
+    if (els.iconRemove?.checked) return null;
+    if (useIconManual()) {
+      const path = normalizeIconPath(els.iconPath?.value);
+      if (!path) throw new Error("아이콘 경로를 입력하세요.");
+      await verifyIconFile(path);
+      return path;
+    }
+    const iconFile = els.icon?.files?.[0];
+    if (iconFile) return (await uploadIconFile(iconFile, utilityId)).path;
+    return base?.icon || null;
+  }
+
   function normalizeDownloadPath(input) {
     let path = String(input || "").trim().replace(/^\/+/, "");
     if (!path) return "";
@@ -585,6 +693,58 @@
     return Boolean(els.fileManual?.checked);
   }
 
+  function useIconManual() {
+    return Boolean(els.iconManual?.checked);
+  }
+
+  function updateIconPreview(path) {
+    if (!els.iconPreview) return;
+    if (path) {
+      const bust = path.startsWith("blob:") ? path : `${path}${path.includes("?") ? "" : `?v=${Date.now()}`}`;
+      els.iconPreview.src = bust;
+      els.iconPreview.hidden = false;
+      if (els.iconPreviewEmpty) els.iconPreviewEmpty.hidden = true;
+    } else {
+      els.iconPreview.removeAttribute("src");
+      els.iconPreview.hidden = true;
+      if (els.iconPreviewEmpty) els.iconPreviewEmpty.hidden = false;
+    }
+  }
+
+  function resetIconFields() {
+    if (els.icon) els.icon.value = "";
+    if (els.iconRemove) els.iconRemove.checked = false;
+    if (els.iconManual) els.iconManual.checked = false;
+    if (els.iconPath) els.iconPath.value = "";
+    if (els.iconDisplay) els.iconDisplay.textContent = "아이콘 이미지 선택";
+    updateIconPreview(null);
+    toggleIconManualUI();
+  }
+
+  function toggleIconManualUI() {
+    const manual = useIconManual();
+    if (els.iconManualWrap) els.iconManualWrap.hidden = !manual;
+    if (manual && els.icon) els.icon.value = "";
+  }
+
+  function onIconPick() {
+    const f = els.icon?.files?.[0];
+    if (!f) return;
+    if (!ICON_ACCEPT_RE.test(f.name)) {
+      els.icon.value = "";
+      toast("아이콘은 png, svg, webp, jpg, ico만 사용할 수 있습니다.", true);
+      return;
+    }
+    if (f.size > MAX_ICON_BYTES) {
+      els.icon.value = "";
+      toast("아이콘은 2MB 이하만 업로드할 수 있습니다.", true);
+      return;
+    }
+    if (els.iconRemove) els.iconRemove.checked = false;
+    if (els.iconDisplay) els.iconDisplay.textContent = f.name;
+    updateIconPreview(URL.createObjectURL(f));
+  }
+
   function toggleManualFileUI() {
     const manual = useManualFile();
     if (els.fileManualWrap) els.fileManualWrap.hidden = !manual;
@@ -624,6 +784,7 @@
       els.fileRequired.hidden = false;
       els.file.required = !useManualFile();
       els.fileDisplay.textContent = `${platformLabel}용 파일 선택`;
+      updateIconPreview(null);
     }
     if (els.fileManual) els.fileManual.checked = false;
     if (els.filePath) els.filePath.value = "";
@@ -631,6 +792,8 @@
     syncFileAccept();
     updatePlatformStatus();
     refreshUpdatedAtField();
+    if (item?.icon) updateIconPreview(item.icon);
+    else if (!els.icon?.files?.[0]) updateIconPreview(null);
   }
 
   function renderList() {
@@ -681,6 +844,7 @@
     els.name.value = item.name;
     els.description.value = item.description;
     els.file.value = "";
+    if (els.iconPath && item.icon) els.iconPath.value = item.icon;
     updateEditorUI();
     renderList();
     els.form.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -690,6 +854,7 @@
   function pickNew() {
     selectedId = null;
     els.form.reset();
+    resetIconFields();
     updateEditorUI();
     renderList();
     els.name.focus();
@@ -894,6 +1059,9 @@
           progress.set(40);
         }
 
+        progress.set(55);
+        const icon = await resolveIconForSave({ base: cur, utilityId: cur.id });
+
         const i = list.findIndex((u) => u.id === cur.id);
         list[i] = buildUtilityPayload(cur, {
           name,
@@ -901,6 +1069,7 @@
           updatedAt,
           windows,
           android,
+          icon,
         });
         nextId = cur.id;
         toast(`「${name}」 저장됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
@@ -916,6 +1085,8 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
+        const icon = await resolveIconForSave({ base: {}, utilityId: id });
+
         const platformData = {
           file: up.path,
           fileName: up.fileName,
@@ -930,6 +1101,7 @@
               updatedAt,
               windows: platformId === "windows" ? platformData : null,
               android: platformId === "android" ? platformData : null,
+              icon,
             }
           )
         );
@@ -947,6 +1119,8 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
+        const icon = await resolveIconForSave({ base: {}, utilityId: id });
+
         const platformData = {
           file: up.path,
           fileName: up.fileName,
@@ -961,6 +1135,7 @@
               updatedAt,
               windows: platformId === "windows" ? platformData : null,
               android: platformId === "android" ? platformData : null,
+              icon,
             }
           )
         );
@@ -1055,6 +1230,11 @@
   els.deleteBtn.addEventListener("click", onDelete);
   els.file.addEventListener("change", onFilePick);
   els.fileManual?.addEventListener("change", toggleManualFileUI);
+  els.icon?.addEventListener("change", onIconPick);
+  els.iconManual?.addEventListener("change", toggleIconManualUI);
+  els.iconRemove?.addEventListener("change", () => {
+    if (els.iconRemove.checked && els.icon) els.icon.value = "";
+  });
   document.querySelectorAll('input[name="admin-platform"]').forEach((radio) => {
     radio.addEventListener("change", onPlatformChange);
   });
