@@ -6,15 +6,6 @@
   },
   "utilities": [
     {
-      "id": "readme",
-      "name": "asdfdaf",
-      "description": "afdsadsfsdf",
-      "updatedAt": "2026-05-24T09:44:41.917Z",
-      "file": "downloads/README.txt",
-      "fileName": "README.txt",
-      "fileSize": "792 B"
-    },
-    {
       "id": "hyot-excel-merge",
       "name": "HyoT 엑셀 병합기",
       "description": "여러 엑셀 파일을 하나의 통합 통합본으로 합칩니다. 시트·헤더 옵션 지원.",
