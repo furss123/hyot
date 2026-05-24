@@ -4,5 +4,87 @@
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
   },
-  "utilities": []
+  "utilities": [
+    {
+      "id": "hyot-excel-merge",
+      "name": "HyoT 엑셀 병합기",
+      "description": "여러 엑셀 파일을 하나의 통합 통합본으로 합칩니다. 시트·헤더 옵션 지원.",
+      "updatedAt": "2026-05-24T09:15:00.000Z",
+      "file": "downloads/hyot-excel-merge-v1.2.exe",
+      "fileName": "hyot-excel-merge-v1.2.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-pdf-stamp",
+      "name": "HyoT PDF 도장",
+      "description": "PDF에 회사 도장·서명·워터마크를 일괄 적용합니다.",
+      "updatedAt": "2026-05-23T14:30:00.000Z",
+      "file": "downloads/hyot-pdf-stamp-v2.0.exe",
+      "fileName": "hyot-pdf-stamp-v2.0.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-image-batch",
+      "name": "HyoT 이미지 일괄 변환",
+      "description": "JPG·PNG·WebP 일괄 리사이즈·압축·이름 변경을 한 번에 처리합니다.",
+      "updatedAt": "2026-05-22T11:00:00.000Z",
+      "file": "downloads/hyot-image-batch-v3.1.exe",
+      "fileName": "hyot-image-batch-v3.1.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-log-analyzer",
+      "name": "HyoT 로그 분석기",
+      "description": "대용량 로그 파일에서 오류·키워드를 빠르게 검색·필터링합니다.",
+      "updatedAt": "2026-05-21T16:45:00.000Z",
+      "file": "downloads/hyot-log-analyzer-v1.0.exe",
+      "fileName": "hyot-log-analyzer-v1.0.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-csv-toolkit",
+      "name": "HyoT CSV 툴킷",
+      "description": "CSV 인코딩 변환, 열 정리, 중복 제거, 엑셀보내기를 지원합니다.",
+      "updatedAt": "2026-05-20T10:20:00.000Z",
+      "file": "downloads/hyot-csv-toolkit-v2.4.exe",
+      "fileName": "hyot-csv-toolkit-v2.4.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-folder-sync",
+      "name": "HyoT 폴더 동기화",
+      "description": "로컬·USB·네트워크 폴더를 미러링하고 변경분만 동기화합니다.",
+      "updatedAt": "2026-05-19T13:10:00.000Z",
+      "file": "downloads/hyot-folder-sync-v1.5.exe",
+      "fileName": "hyot-folder-sync-v1.5.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-text-diff",
+      "name": "HyoT 텍스트 비교",
+      "description": "두 문서·코드·설정 파일의 차이를 나란히 비교해 표시합니다.",
+      "updatedAt": "2026-05-18T15:00:00.000Z",
+      "file": "downloads/hyot-text-diff-v1.1.exe",
+      "fileName": "hyot-text-diff-v1.1.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-screen-ocr",
+      "name": "HyoT 화면 OCR",
+      "description": "화면 캡처 후 텍스트를 추출하고 클립보드·파일로 저장합니다.",
+      "updatedAt": "2026-05-17T09:40:00.000Z",
+      "file": "downloads/hyot-screen-ocr-v2.2.exe",
+      "fileName": "hyot-screen-ocr-v2.2.exe",
+      "fileSize": "50.0 MB"
+    },
+    {
+      "id": "hyot-backup-scheduler",
+      "name": "HyoT 백업 스케줄러",
+      "description": "지정 폴더를 주기적으로 백업하고 보관 기간·압축 옵션을 설정합니다.",
+      "updatedAt": "2026-05-16T18:25:00.000Z",
+      "file": "downloads/hyot-backup-scheduler-v1.3.exe",
+      "fileName": "hyot-backup-scheduler-v1.3.exe",
+      "fileSize": "50.0 MB"
+    }
+  ]
 }
