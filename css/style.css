@@ -1642,7 +1642,7 @@ html[data-resolved-theme="dark"] .feedback-board {
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  padding: 2rem 1rem 2.5rem;
+  padding: 1.5rem 1rem 2rem;
   text-align: center;
 }
 
