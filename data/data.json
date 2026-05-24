@@ -18,17 +18,6 @@
       }
     },
     {
-      "id": "hyot-pdf-stamp",
-      "name": "HyoT PDF 도장",
-      "description": "PDF에 회사 도장·서명·워터마크를 일괄 적용합니다.",
-      "updatedAt": "2026-05-23T14:30:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-pdf-stamp-v2.0.exe",
-        "fileName": "hyot-pdf-stamp-v2.0.exe",
-        "fileSize": "50.0 MB"
-      }
-    },
-    {
       "id": "hyot-image-batch",
       "name": "HyoT 이미지 일괄 변환",
       "description": "JPG·PNG·WebP 일괄 리사이즈·압축·이름 변경을 한 번에 처리합니다.",
