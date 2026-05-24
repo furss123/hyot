@@ -15,6 +15,10 @@
   const { migrateUtility, getPlatformFile, hasExternalLink, isValidUtility } = platforms;
 
   const els = {
+    cta: document.getElementById("feedback-cta"),
+    compose: document.getElementById("feedback-compose"),
+    openBtn: document.getElementById("feedback-open-btn"),
+    closeBtn: document.getElementById("feedback-close-btn"),
     form: document.getElementById("feedback-form"),
     status: document.getElementById("feedback-status"),
     utility: document.getElementById("feedback-utility"),
@@ -59,6 +63,48 @@
     if (els.setupHint) els.setupHint.hidden = boardReady;
     if (els.submit) els.submit.textContent = "의견 등록";
     refreshSubmitButton();
+    if (els.openBtn) els.openBtn.disabled = !boardReady;
+  }
+
+  function isComposeOpen() {
+    return els.compose && !els.compose.hidden;
+  }
+
+  function openCompose(options = {}) {
+    if (!els.compose || !els.cta) return;
+    els.compose.hidden = false;
+    els.cta.hidden = true;
+    if (els.openBtn) {
+      els.openBtn.setAttribute("aria-expanded", "true");
+    }
+    if (options.focus !== false) {
+      requestAnimationFrame(() => {
+        const target = els.utility && !els.utility.disabled ? els.utility : els.body;
+        target?.focus();
+      });
+    }
+    if (options.scroll !== false) {
+      els.compose.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function closeCompose() {
+    if (!els.compose || !els.cta) return;
+    els.compose.hidden = true;
+    els.cta.hidden = false;
+    if (els.openBtn) {
+      els.openBtn.setAttribute("aria-expanded", "false");
+      els.openBtn.focus();
+    }
+    if (location.hash === "#feedback-write") {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+    }
+  }
+
+  function maybeOpenComposeFromHash() {
+    if (location.hash === "#feedback-write") {
+      openCompose({ scroll: true });
+    }
   }
 
   function clearScreenshotPreview() {
@@ -381,6 +427,9 @@
   els.form.addEventListener("submit", onSubmit);
   els.screenshot?.addEventListener("change", onScreenshotChange);
   els.screenshotClear?.addEventListener("click", clearScreenshotPreview);
+  els.openBtn?.addEventListener("click", () => openCompose());
+  els.closeBtn?.addEventListener("click", closeCompose);
+  window.addEventListener("hashchange", maybeOpenComposeFromHash);
   loadCatalog();
-  boot();
+  boot().then(() => maybeOpenComposeFromHash());
 })();
