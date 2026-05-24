@@ -5,7 +5,7 @@ Windows RAM 정리 프로그램 · by HyoT
 
 ■ 실행 (오프라인 단독)
 
-  RamShim-1.0.0-Portable.exe 더블클릭
+  RamShim-1.0.0.exe 더블클릭
 
   - 인터넷·브라우저·Node.js 불필요
   - 실행 시 관리자 권한(UAC) 확인 창이 표시됩니다
