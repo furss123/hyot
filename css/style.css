@@ -702,6 +702,44 @@ a {
   flex: 1;
 }
 
+.btn-save-progress {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-save-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--save-progress, 0%);
+  background: linear-gradient(
+    135deg,
+    var(--accent-purple) 0%,
+    #7c3aed 55%,
+    var(--accent-coral) 120%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: width 0.2s ease-out;
+  pointer-events: none;
+}
+
+.btn-save-progress__label {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-save-progress.is-saving {
+  cursor: wait;
+  background: rgba(10, 12, 22, 0.75);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.08);
+  transform: none;
+}
+
+.btn-save-progress.is-saving:hover {
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.08);
+}
+
 .admin-file-btn {
   position: relative;
   display: block;

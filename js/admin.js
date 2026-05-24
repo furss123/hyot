@@ -48,8 +48,41 @@
 
   let catalogData = null;
   let selectedId = null;
+  let saveProgressValue = 0;
 
   const isEdit = () => Boolean(selectedId);
+
+  function mapSegment(start, end, inner0to100) {
+    return start + (inner0to100 / 100) * (end - start);
+  }
+
+  function beginSaveProgress() {
+    const btn = els.submitBtn;
+    const label = btn.querySelector(".btn-save-progress__label");
+    const defaultLabel = btn.dataset.defaultLabel || "저장";
+    saveProgressValue = 0;
+    btn.classList.add("is-saving");
+    btn.disabled = true;
+
+    const set = (pct) => {
+      const next = Math.min(100, Math.max(saveProgressValue, Math.round(pct)));
+      if (next < 1) return set(1);
+      saveProgressValue = next;
+      btn.style.setProperty("--save-progress", `${next}%`);
+      if (label) label.textContent = `${next}%`;
+    };
+
+    const end = () => {
+      btn.classList.remove("is-saving");
+      btn.style.removeProperty("--save-progress");
+      btn.disabled = false;
+      if (label) label.textContent = defaultLabel;
+      saveProgressValue = 0;
+    };
+
+    set(1);
+    return { set, end, complete: () => set(100) };
+  }
   const getItem = () =>
     catalogData?.utilities?.find((u) => u.id === selectedId) ?? null;
 
@@ -242,10 +275,13 @@
     );
   }
 
-  async function uploadFile(file) {
+  async function uploadFile(file, onSegmentProgress) {
+    const report = (inner) => onSegmentProgress?.(inner);
     const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
     const path = `${cfg.downloadsPath}/${safe}`;
     let sha = null;
+
+    report(0);
     try {
       const ref = encodeURIComponent(cfg.github.branch);
       const ex = await api(
@@ -255,12 +291,24 @@
     } catch {
       /* new */
     }
+    report(12);
+
     const b64 = await new Promise((ok, no) => {
       const r = new FileReader();
-      r.onload = () => ok(String(r.result).split(",")[1]);
+      r.onprogress = (e) => {
+        if (e.lengthComputable) {
+          report(12 + (e.loaded / e.total) * 48);
+        }
+      };
+      r.onload = () => {
+        report(62);
+        ok(String(r.result).split(",")[1]);
+      };
       r.onerror = () => no(r.error);
       r.readAsDataURL(file);
     });
+
+    report(68);
     await api(
       `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${path}`,
       {
@@ -273,6 +321,7 @@
         }),
       }
     );
+    report(100);
     return {
       path,
       fileName: file.name,
@@ -479,11 +528,13 @@
       return;
     }
 
-    els.submitBtn.disabled = true;
-    toast("저장 중…");
+    const progress = beginSaveProgress();
+    toast("");
 
     try {
+      progress.set(5);
       const { json, sha } = await readJson();
+      progress.set(12);
       const list = [...(json.utilities || [])];
       const updatedAt = nowISO();
 
@@ -493,10 +544,14 @@
         let fileName = cur.fileName || "";
         let fileSize = cur.fileSize || "";
         if (file) {
-          const up = await uploadFile(file);
+          const up = await uploadFile(file, (inner) => {
+            progress.set(mapSegment(12, 72, inner));
+          });
           filePath = up.path;
           fileName = up.fileName;
           fileSize = up.fileSize;
+        } else {
+          progress.set(40);
         }
         const i = list.findIndex((u) => u.id === cur.id);
         list[i] = {
@@ -508,11 +563,15 @@
           fileName,
           fileSize,
         };
+        progress.set(78);
         await writeJson({ ...json, utilities: list }, sha, `update: ${name}`);
+        progress.set(90);
         selectedId = cur.id;
         toast(`「${name}」 저장됨 · 1~2분 후 사이트 반영`);
       } else {
-        const up = await uploadFile(file);
+        const up = await uploadFile(file, (inner) => {
+          progress.set(mapSegment(12, 72, inner));
+        });
         let id = file.name
           .replace(/\.[^.]+$/, "")
           .toLowerCase()
@@ -530,18 +589,23 @@
           fileName: up.fileName,
           fileSize: up.fileSize,
         });
+        progress.set(78);
         await writeJson({ ...json, utilities: list }, sha, `add: ${name}`);
+        progress.set(90);
         selectedId = id;
         toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
       }
 
+      progress.set(95);
       await load();
+      progress.complete();
+      await new Promise((r) => setTimeout(r, 350));
       if (selectedId) pickItem(selectedId);
       else pickNew();
     } catch (err) {
       toast(err.message, true);
     } finally {
-      els.submitBtn.disabled = false;
+      progress.end();
     }
   }
 
