@@ -12,7 +12,6 @@ const {
   createPlatformIcon,
   createFileIcon,
   createUtilityIcon,
-  getCardFileKind,
   getFileKindFromPlatformFile,
 } = window.HYOT_PLATFORMS;
 
