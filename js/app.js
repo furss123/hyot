@@ -87,43 +87,43 @@ function createLinkButton(item) {
   return link;
 }
 
+function getDownloadFileName(item, platform, pf) {
+  if (pf?.fileName) return pf.fileName;
+  if (pf?.file) return pf.file.split("/").pop();
+  return platform.label;
+}
+
 function createPlatformButton(item, platform) {
   const pf = getPlatformFile(item, platform.id);
 
   const inner = document.createDocumentFragment();
   inner.appendChild(createPlatformIcon(platform.id));
 
-  const text = document.createElement("span");
-  text.className = "btn-platform__text";
-
-  const label = document.createElement("span");
-  label.className = "btn-platform__label";
-  label.textContent = platform.label;
-
   if (pf) {
-    text.appendChild(label);
-    if (pf.fileSize) {
-      const size = document.createElement("span");
-      size.className = "btn-platform__size";
-      size.textContent = pf.fileSize;
-      text.appendChild(size);
-    }
-    inner.appendChild(text);
+    const fileName = document.createElement("span");
+    fileName.className = "btn-platform__filename";
+    fileName.textContent = getDownloadFileName(item, platform, pf);
+    fileName.title = getDownloadFileName(item, platform, pf);
+    inner.appendChild(fileName);
 
     const link = document.createElement("a");
     link.className = `btn-download btn-platform btn-platform--${platform.id}`;
     link.href = pf.file;
     if (pf.fileName) link.download = pf.fileName;
-    link.setAttribute("aria-label", `${item.name} — ${platform.label} 다운로드`);
+    const ariaSize = pf.fileSize ? ` (${pf.fileSize})` : "";
+    link.setAttribute(
+      "aria-label",
+      `${item.name} — ${getDownloadFileName(item, platform, pf)}${ariaSize} 다운로드`
+    );
     link.append(inner);
     return link;
   }
 
-  const missing = document.createElement("span");
-  missing.className = "btn-platform__missing";
-  missing.textContent = "준비 중";
-  text.append(label, missing);
-  inner.appendChild(text);
+  const fileName = document.createElement("span");
+  fileName.className = "btn-platform__filename btn-platform__filename--muted";
+  fileName.textContent = `${platform.label} · 준비 중`;
+
+  inner.appendChild(fileName);
 
   const span = document.createElement("span");
   span.className = `btn-platform btn-platform--${platform.id} btn-platform--missing`;
