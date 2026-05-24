@@ -530,6 +530,7 @@
 
     const progress = beginSaveProgress();
     toast("");
+    let goToMain = false;
 
     try {
       progress.set(5);
@@ -596,16 +597,14 @@
         toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
       }
 
-      progress.set(95);
-      await load();
       progress.complete();
-      await new Promise((r) => setTimeout(r, 350));
-      if (selectedId) pickItem(selectedId);
-      else pickNew();
+      await new Promise((r) => setTimeout(r, 400));
+      goToMain = true;
+      window.location.assign("./");
     } catch (err) {
       toast(err.message, true);
     } finally {
-      progress.end();
+      if (!goToMain) progress.end();
     }
   }
 
