@@ -1,0 +1,23 @@
+name: 의견 · 버그 제보
+description: HyoT 자료실 개선사항, 버그, 오류를 알려 주세요.
+title: "[의견] "
+labels:
+  - feedback
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: 분류
+      options:
+        - 개선사항
+        - 버그·오류
+        - 기타
+    validations:
+      required: true
+  - type: textarea
+    id: body
+    attributes:
+      label: 내용
+      description: 문제 상황, Windows 버전, 관련 프로그램 이름 등을 적어 주세요.
+    validations:
+      required: true

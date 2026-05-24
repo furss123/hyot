@@ -31,10 +31,21 @@ jobs:
               `window.HYOT_ADMIN_SECRETS=${JSON.stringify(payload)};\n`
             );
           }
+          const feedbackToken = process.env.HYOT_FEEDBACK_TOKEN || "";
+          if (feedbackToken) {
+            fs.writeFileSync(
+              "js/feedback-auth.js",
+              `window.HYOT_FEEDBACK_TOKEN=${JSON.stringify(feedbackToken)};\n`
+            );
+          } else {
+            fs.writeFileSync("js/feedback-auth.js", "window.HYOT_FEEDBACK_TOKEN=null;\n");
+            console.log("::warning::HYOT_FEEDBACK_TOKEN not set. Public feedback uses GitHub Issues.");
+          }
           NODE
         env:
           HYOT_ADMIN_ID: ${{ secrets.HYOT_ADMIN_ID }}
           HYOT_ADMIN_PASSWORD_SHA256: ${{ secrets.HYOT_ADMIN_PASSWORD_SHA256 }}
+          HYOT_FEEDBACK_TOKEN: ${{ secrets.HYOT_FEEDBACK_TOKEN }}
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4

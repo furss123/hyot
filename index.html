@@ -42,6 +42,60 @@
     </div>
   </main>
 
+  <section class="feedback-board" id="feedback-board" aria-labelledby="feedback-board-title">
+    <div class="container">
+      <header class="feedback-board__header">
+        <h2 id="feedback-board-title" class="feedback-board__title">의견 게시판</h2>
+        <p class="feedback-board__desc">개선사항, 버그·오류, 사용 중 불편한 점을 알려 주세요.</p>
+      </header>
+
+      <div class="feedback-board__layout">
+        <form id="feedback-form" class="feedback-form" novalidate>
+          <h3 class="feedback-form__heading">의견 남기기</h3>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">분류</span>
+            <select id="feedback-category" class="feedback-field__input" required>
+              <option value="improvement">개선사항</option>
+              <option value="bug">버그·오류</option>
+              <option value="other">기타</option>
+            </select>
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">제목</span>
+            <input id="feedback-title" class="feedback-field__input" type="text" required maxlength="80" placeholder="요약을 입력하세요">
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">내용</span>
+            <textarea id="feedback-body" class="feedback-field__input feedback-field__textarea" rows="5" required maxlength="1200" placeholder="어떤 문제인지, 어떤 환경(Windows 버전, 프로그램 이름 등)인지 적어 주시면 도움이 됩니다."></textarea>
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">이름 (선택)</span>
+            <input id="feedback-author" class="feedback-field__input" type="text" maxlength="24" placeholder="익명">
+          </label>
+
+          <p id="feedback-github-hint" class="feedback-form__hint">
+            사이트에 바로 등록하려면 관리자가 GitHub 토큰을 설정해야 합니다.
+            지금은 <a id="feedback-github-link" href="https://github.com/furss123/hyot/issues/new" target="_blank" rel="noopener noreferrer">GitHub 이슈</a>로 등록됩니다. (GitHub 계정 필요)
+          </p>
+
+          <p id="feedback-status" class="feedback-status" role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" class="btn-download feedback-form__submit" id="feedback-submit">의견 등록</button>
+        </form>
+
+        <div class="feedback-list-panel">
+          <h3 class="feedback-list-panel__heading">등록된 의견</h3>
+          <ul id="feedback-list" class="feedback-list" role="list"></ul>
+          <p id="feedback-empty" class="feedback-empty" hidden>아직 등록된 의견이 없습니다. 첫 의견을 남겨 보세요.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="site-footer">
     <div class="container">
       <p class="site-footer__copy">
@@ -51,6 +105,9 @@
   </footer>
 
   <script src="js/platforms.js?v=20260524"></script>
+  <script src="js/feedback-config.js?v=20260524"></script>
+  <script src="js/feedback-auth.js?v=20260524"></script>
+  <script src="js/feedback.js?v=20260524" defer></script>
   <script src="js/app.js?v=20260524" defer></script>
   <script>
     if (sessionStorage.getItem("hyot_admin_session") === "1") {
