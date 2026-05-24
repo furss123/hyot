@@ -23,11 +23,11 @@ jobs:
           const hash = process.env.HYOT_ADMIN_PASSWORD_SHA256 || "";
           if (!id || !hash) {
             console.log("::warning::HYOT_ADMIN_ID / HYOT_ADMIN_PASSWORD_SHA256 not set. Admin login disabled on site.");
-            fs.writeFileSync("js/admin-secrets.js", "window.HYOT_ADMIN_SECRETS=null;\n");
+            fs.writeFileSync("js/admin-auth.js", "window.HYOT_ADMIN_SECRETS=null;\n");
           } else {
             const payload = { adminId: id, adminPasswordSha256: hash };
             fs.writeFileSync(
-              "js/admin-secrets.js",
+              "js/admin-auth.js",
               `window.HYOT_ADMIN_SECRETS=${JSON.stringify(payload)};\n`
             );
           }

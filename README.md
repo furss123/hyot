@@ -48,11 +48,11 @@ $bytes = [System.Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encod
 ($bytes | ForEach-Object { $_.ToString("x2") }) -join ""
 ```
 
-Secrets 저장 후 `main`에 push하면 배포 시 `admin-secrets.js`가 자동 생성됩니다.
+Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 생성됩니다.
 
 ### 로컬 개발
 
-`js/admin-secrets.example.js`를 `js/admin-secrets.js`로 복사한 뒤 값을 채웁니다. (`admin-secrets.js`는 git에 올라가지 않음)
+`js/admin-secrets.example.js`를 `js/admin-auth.js`로 복사한 뒤 값을 채웁니다.
 
 ### 수동 추가 (JSON 직접 편집)
 
