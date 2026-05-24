@@ -393,6 +393,7 @@
 
   async function githubRequest(path, token, options = {}) {
     return fetch(`https://api.github.com${path}`, {
+      cache: "no-store",
       ...options,
       headers: {
         Accept: "application/vnd.github+json",
@@ -457,6 +458,29 @@
       `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${cfg.dataPath}`,
       { method: "PUT", body: JSON.stringify(body) }
     );
+  }
+
+  function isShaConflictError(err) {
+    const msg = String(err?.message || err);
+    return /does not match|sha was supplied|409|Conflict/i.test(msg);
+  }
+
+  /** 최신 SHA를 읽어 저장. 동시 수정·자동 push 등으로 SHA가 바뀌면 재시도 */
+  async function persistCatalogChange(mutator, message, maxAttempts = 5) {
+    let lastErr;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const { json, sha } = await readJson();
+        const next = mutator(json);
+        await writeJson(next, sha, message);
+        return next;
+      } catch (err) {
+        lastErr = err;
+        if (!isShaConflictError(err) || attempt === maxAttempts - 1) throw err;
+        await new Promise((r) => setTimeout(r, 120 * (attempt + 1)));
+      }
+    }
+    throw lastErr;
   }
 
   function repoPath() {
@@ -934,10 +958,9 @@
       }
 
       progress.set(78);
-      const { sha } = await readJson();
-      await writeJson(
-        { ...json, utilities: list },
-        sha,
+      const listToSave = list;
+      await persistCatalogChange(
+        (fresh) => ({ ...fresh, utilities: listToSave }),
         isEdit() ? `update: ${name}` : `add: ${name}`
       );
       progress.set(90);
@@ -975,13 +998,18 @@
     if (selectedId === id) pickNew();
 
     try {
-      const { json, sha } = await readJson();
-      const remoteList = (json.utilities || []).filter((u) => u.id !== id);
-      await writeJson({ ...json, utilities: remoteList }, sha, `remove: ${name}`);
+      const next = await persistCatalogChange(
+        (json) => ({
+          ...json,
+          utilities: (json.utilities || []).filter((u) => u.id !== id),
+        }),
+        `remove: ${name}`
+      );
       catalogData = {
-        ...json,
-        utilities: remoteList.map(migrateUtility),
+        ...catalogData,
+        utilities: next.utilities.map(migrateUtility),
       };
+      renderList();
       toast(`「${name}」 삭제됨`);
     } catch (err) {
       applyLocalCatalog(snapshot);
