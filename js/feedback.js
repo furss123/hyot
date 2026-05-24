@@ -313,22 +313,15 @@
       return null;
     }
 
-    const title = els.title.value.trim();
     const body = els.body.value.trim();
     const author = els.author.value.trim() || "익명";
+    const category = els.category.value;
+    const categoryLabel = categoryMap[category] || category;
+    const title = `[${categoryLabel}] ${target.utilityLabel}`;
 
-    if (title.length < 2) {
-      setStatus("제목을 2자 이상 입력해 주세요.", true);
-      els.title.focus();
-      return null;
-    }
     if (body.length < 10) {
       setStatus("내용을 10자 이상 입력해 주세요.", true);
       els.body.focus();
-      return null;
-    }
-    if (title.length > cfg.limits.titleMax) {
-      setStatus(`제목은 ${cfg.limits.titleMax}자 이하로 입력해 주세요.`, true);
       return null;
     }
     if (body.length > cfg.limits.bodyMax) {
@@ -342,7 +335,7 @@
 
     return {
       id: `fb-${Date.now()}`,
-      category: els.category.value,
+      category,
       utilityId: target.utilityId,
       utilityName: target.utilityName,
       platformId: target.platformId,
