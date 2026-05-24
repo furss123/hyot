@@ -15,7 +15,11 @@
   }
 
   function systemPrefersDark() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const darkMq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (darkMq.matches) return true;
+    const lightMq = window.matchMedia("(prefers-color-scheme: light)");
+    if (lightMq.matches) return false;
+    return false;
   }
 
   function resolvedTheme(mode) {
@@ -34,7 +38,7 @@
     const resolved = resolvedTheme(mode);
     const root = document.documentElement;
     root.setAttribute("data-resolved-theme", resolved);
-    root.style.colorScheme = resolved;
+    root.style.colorScheme = mode === "system" ? "light dark" : resolved;
   }
 
   function applyTheme(mode) {

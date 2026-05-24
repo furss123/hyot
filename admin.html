@@ -9,7 +9,7 @@
   <title>관리자 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20260525">
+  <link rel="stylesheet" href="css/style.css?v=20260529">
 </head>
 <body>
   <div class="page-bg" aria-hidden="true"></div>
@@ -198,7 +198,7 @@
           </div>
           <button type="button" id="admin-feedback-signout" class="admin-feedback-auth__signout" hidden>게시판 로그아웃</button>
           <div id="admin-feedback-list-wrap" hidden>
-            <p class="admin-hint admin-feedback-panel__hint">메인 페이지 하단 게시판에 표시되는 의견입니다. 처리 완료·숨기기·삭제할 수 있습니다.</p>
+            <p class="admin-hint admin-feedback-panel__hint">등록된 의견·스크린샷은 관리자만 볼 수 있습니다. 처리 완료·숨기기·삭제할 수 있습니다.</p>
             <ul id="admin-feedback-list" class="admin-feedback-list" role="list"></ul>
             <p id="admin-feedback-empty" class="admin-list-empty">등록된 의견이 없습니다.</p>
           </div>
@@ -216,7 +216,7 @@
     </div>
   </footer>
 
-  <script src="js/theme.js?v=20260527"></script>
+  <script src="js/theme.js?v=20260528"></script>
   <script src="js/admin-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -230,7 +230,7 @@
   <script src="js/platforms.js"></script>
   <script src="js/admin.js" defer></script>
   <script src="js/admin-feedback.js" defer></script>
-  <script src="js/admin-feedback-github.js" defer></script>
+  <script src="js/admin-feedback-github.js?v=20260529" defer></script>
   <script>
     document.getElementById("footer-year").textContent = String(new Date().getFullYear());
   </script>

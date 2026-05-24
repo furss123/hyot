@@ -7,6 +7,9 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+const FEEDBACK_BRANCH = "main";
+const MAX_SCREENSHOT_BASE64 = 600000;
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
@@ -48,6 +51,13 @@ export default {
       "User-Agent": "hyot-feedback-worker",
     };
 
+    let prepared;
+    try {
+      prepared = await preparePostForStorage({ owner, repo, post, headers });
+    } catch (err) {
+      return json({ ok: false, error: "attachment_failed", detail: String(err) }, 400);
+    }
+
     const dispatchRes = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/dispatches`,
       {
@@ -55,23 +65,18 @@ export default {
         headers,
         body: JSON.stringify({
           event_type: "hyot_feedback_submit",
-          client_payload: post,
+          client_payload: prepared,
         }),
       }
     );
 
     if (dispatchRes.ok) {
-      return json({ ok: true, id: post.id });
+      return json({ ok: true, id: prepared.id });
     }
 
     try {
-      await persistPost({ owner, repo, post, headers, branch: "gh-pages" });
-      try {
-        await persistPost({ owner, repo, post, headers, branch: "main" });
-      } catch {
-        /* main optional */
-      }
-      return json({ ok: true, id: post.id });
+      await persistPost({ owner, repo, post: prepared, headers, branch: FEEDBACK_BRANCH });
+      return json({ ok: true, id: prepared.id });
     } catch (err) {
       const detail = await dispatchRes.text().catch(() => String(err));
       return json({ ok: false, error: "github_failed", detail }, 502);
@@ -84,6 +89,63 @@ function json(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", ...CORS },
   });
+}
+
+function screenshotExt(mime) {
+  if (String(mime).includes("png")) return "png";
+  if (String(mime).includes("webp")) return "webp";
+  return "jpg";
+}
+
+async function putRepoFile({ owner, repo, path, branch, contentBase64, message, headers }) {
+  const putBody = { message, content: contentBase64, branch };
+  const getRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    { headers }
+  );
+  if (getRes.ok) {
+    const existing = await getRes.json();
+    putBody.sha = existing.sha;
+  } else if (getRes.status !== 404) {
+    throw new Error(`read attachment: HTTP ${getRes.status}`);
+  }
+
+  const putRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    { method: "PUT", headers, body: JSON.stringify(putBody) }
+  );
+  if (!putRes.ok) {
+    throw new Error(`write attachment: HTTP ${putRes.status}`);
+  }
+}
+
+async function preparePostForStorage({ owner, repo, post, headers }) {
+  const stored = { ...post, visibility: "admin" };
+  delete stored.previewDataUrl;
+
+  const raw = stored.screenshotBase64;
+  if (raw) {
+    if (String(raw).length > MAX_SCREENSHOT_BASE64) {
+      throw new Error("screenshot_too_large");
+    }
+    const mime = stored.screenshotMime || "image/jpeg";
+    const path = `feedback-attachments/${stored.id}.${screenshotExt(mime)}`;
+    await putRepoFile({
+      owner,
+      repo,
+      path,
+      branch: FEEDBACK_BRANCH,
+      contentBase64: String(raw).replace(/\s/g, ""),
+      message: `feedback attachment: ${stored.id}`,
+      headers,
+    });
+    stored.screenshotPath = path;
+    stored.screenshotMime = mime;
+    stored.hasScreenshot = true;
+    delete stored.screenshotBase64;
+  }
+
+  return stored;
 }
 
 async function persistPost({ owner, repo, post, headers, branch }) {

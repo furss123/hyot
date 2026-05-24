@@ -15,7 +15,7 @@
 
   function deployBranches() {
     const primary = String(gh.branch || "main").trim() || "main";
-    return [...new Set([primary, "gh-pages"])];
+    return [primary];
   }
 
   function uint8ToBase64(bytes) {
@@ -136,12 +136,14 @@
 
   async function pollForPost(postId, timeoutMs = 90000) {
     const deadline = Date.now() + timeoutMs;
+    const branch = gh.branch || "main";
     while (Date.now() < deadline) {
-      const res = await fetch(cfg.dataPath, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        const posts = Array.isArray(data.posts) ? data.posts : [];
+      try {
+        const { json } = await readFeedback(branch);
+        const posts = Array.isArray(json.posts) ? json.posts : [];
         if (posts.some((p) => p.id === postId)) return true;
+      } catch {
+        /* retry */
       }
       await sleep(2500);
     }
@@ -149,10 +151,7 @@
   }
 
   async function listPosts() {
-    const res = await fetch(cfg.dataPath, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return Array.isArray(data.posts) ? data.posts : [];
+    return [];
   }
 
   async function submitFeedback(post) {
@@ -196,6 +195,7 @@
 
   window.HyotFeedbackGithub = {
     isAvailable: () => Boolean(token),
+    canSubmit: () => Boolean(token),
     probeToken,
     listPosts,
     submitFeedback,

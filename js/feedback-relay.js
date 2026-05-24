@@ -13,10 +13,7 @@
   }
 
   async function listPosts() {
-    const res = await fetch(cfg.dataPath, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return Array.isArray(data.posts) ? data.posts : [];
+    return [];
   }
 
   async function submitFeedback(post) {

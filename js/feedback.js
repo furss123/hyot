@@ -1,5 +1,5 @@
 /**
- * HyoT — 의견 게시판 (Firebase 우선, GitHub 폴백)
+ * HyoT — 의견 게시판 (등록만 공개, 목록은 관리자 전용)
  */
 (function () {
   const cfg = window.HYOT_FEEDBACK_CONFIG;
@@ -16,14 +16,16 @@
 
   const els = {
     form: document.getElementById("feedback-form"),
-    list: document.getElementById("feedback-list"),
-    empty: document.getElementById("feedback-empty"),
     status: document.getElementById("feedback-status"),
     utility: document.getElementById("feedback-utility"),
     category: document.getElementById("feedback-category"),
     body: document.getElementById("feedback-body"),
     author: document.getElementById("feedback-author"),
     submit: document.getElementById("feedback-submit"),
+    screenshot: document.getElementById("feedback-screenshot"),
+    screenshotPreview: document.getElementById("feedback-screenshot-preview"),
+    screenshotImg: document.getElementById("feedback-screenshot-img"),
+    screenshotClear: document.getElementById("feedback-screenshot-clear"),
     readyHint: document.getElementById("feedback-ready-hint"),
     setupHint: document.getElementById("feedback-setup-hint"),
   };
@@ -33,12 +35,12 @@
   let boardReady = false;
   let useGithub = false;
   let useRelay = false;
+  let pendingScreenshot = null;
 
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
   );
 
-  /** @type {Map<string, { utilityId: string, utilityName: string, platformId: string, platformLabel: string, fileName: string, utilityLabel: string }>} */
   const utilityTargets = new Map();
 
   function setStatus(message, isError = false) {
@@ -46,18 +48,6 @@
     els.status.textContent = message;
     els.status.classList.toggle("feedback-status--error", isError);
     els.status.hidden = !message;
-  }
-
-  function formatDate(iso) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(d);
   }
 
   function refreshSubmitButton(hasOptions = utilityTargets.size > 0) {
@@ -70,6 +60,114 @@
     if (els.setupHint) els.setupHint.hidden = boardReady;
     if (els.submit) els.submit.textContent = "의견 등록";
     refreshSubmitButton();
+  }
+
+  function clearScreenshotPreview() {
+    pendingScreenshot = null;
+    if (els.screenshot) els.screenshot.value = "";
+    if (els.screenshotImg) els.screenshotImg.removeAttribute("src");
+    if (els.screenshotPreview) els.screenshotPreview.hidden = true;
+  }
+
+  function showScreenshotPreview(dataUrl) {
+    if (!els.screenshotPreview || !els.screenshotImg) return;
+    els.screenshotImg.src = dataUrl;
+    els.screenshotPreview.hidden = false;
+  }
+
+  function loadImageFromFile(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("image_load_failed"));
+      };
+      img.src = url;
+    });
+  }
+
+  function canvasToJpegBlob(canvas, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("encode_failed"))),
+        "image/jpeg",
+        quality
+      );
+    });
+  }
+
+  async function compressScreenshot(file) {
+    const maxInput = cfg.limits.screenshotMaxInputBytes || 2 * 1024 * 1024;
+    const maxOut = cfg.limits.screenshotMaxOutputBytes || 420000;
+    const maxDim = cfg.limits.screenshotMaxDimension || 1280;
+    let quality = cfg.limits.screenshotQuality ?? 0.82;
+
+    if (!file.type.startsWith("image/")) {
+      throw new Error("이미지 파일만 첨부할 수 있습니다.");
+    }
+    if (file.size > maxInput) {
+      throw new Error("스크린샷은 2MB 이하로 선택해 주세요.");
+    }
+
+    const img = await loadImageFromFile(file);
+    let w = img.naturalWidth;
+    let h = img.naturalHeight;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    w = Math.max(1, Math.round(w * scale));
+    h = Math.max(1, Math.round(h * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas_unavailable");
+    ctx.drawImage(img, 0, 0, w, h);
+
+    let blob = await canvasToJpegBlob(canvas, quality);
+    while (blob.size > maxOut && quality > 0.45) {
+      quality -= 0.08;
+      blob = await canvasToJpegBlob(canvas, quality);
+    }
+    if (blob.size > maxOut) {
+      throw new Error("스크린샷이 너무 큽니다. 더 작은 이미지를 선택해 주세요.");
+    }
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(blob);
+    });
+
+    const base64 = String(dataUrl).split(",")[1] || "";
+    return {
+      screenshotMime: "image/jpeg",
+      screenshotBase64: base64,
+      previewDataUrl: dataUrl,
+      screenshotBytes: blob.size,
+    };
+  }
+
+  async function onScreenshotChange() {
+    const file = els.screenshot?.files?.[0];
+    if (!file) {
+      clearScreenshotPreview();
+      return;
+    }
+    try {
+      setStatus("스크린샷 처리 중…");
+      pendingScreenshot = await compressScreenshot(file);
+      showScreenshotPreview(pendingScreenshot.previewDataUrl);
+      setStatus("");
+    } catch (err) {
+      clearScreenshotPreview();
+      setStatus(err.message || "스크린샷을 처리하지 못했습니다.", true);
+    }
   }
 
   function buildUtilityTargets(utilities = []) {
@@ -152,63 +250,6 @@
     }
   }
 
-  function renderPosts(posts) {
-    if (!els.list) return;
-    const openPosts = posts.filter((p) => p.status !== "hidden");
-    els.list.replaceChildren();
-
-    if (!openPosts.length) {
-      if (els.empty) els.empty.hidden = false;
-      return;
-    }
-
-    if (els.empty) els.empty.hidden = true;
-
-    const fragment = document.createDocumentFragment();
-    openPosts.forEach((post) => {
-      const li = document.createElement("li");
-      li.className = "feedback-item";
-      if (post.status === "resolved") li.classList.add("feedback-item--resolved");
-
-      const cat = document.createElement("span");
-      cat.className = `feedback-item__category feedback-item__category--${post.category}`;
-      cat.textContent = categoryMap[post.category] || post.category;
-
-      const heading = document.createElement("h3");
-      heading.className = "feedback-item__title";
-      heading.textContent = post.utilityLabel || post.utilityName || post.title || "의견";
-
-      const meta = document.createElement("p");
-      meta.className = "feedback-item__meta";
-      const statusLabel = post.status === "resolved" ? " · 처리 완료" : "";
-      meta.textContent = `${post.author || "익명"} · ${formatDate(post.createdAt)}${statusLabel}`;
-
-      const body = document.createElement("p");
-      body.className = "feedback-item__body";
-      body.textContent = post.body;
-
-      li.append(cat, heading, meta, body);
-      fragment.appendChild(li);
-    });
-
-    els.list.appendChild(fragment);
-  }
-
-  async function loadPosts() {
-    if (!boardReady) return;
-    try {
-      const posts = useRelay
-        ? await relay.listPosts()
-        : useGithub
-          ? await ghBackend.listPosts()
-          : await fb.listPosts();
-      renderPosts(posts);
-    } catch (err) {
-      console.error("[HyoT feedback]", err);
-      setStatus("의견 목록을 불러오지 못했습니다.", true);
-    }
-  }
-
   function validateForm() {
     const utilityKey = els.utility?.value || "";
     const target = utilityTargets.get(utilityKey);
@@ -238,7 +279,7 @@
       return null;
     }
 
-    return {
+    const post = {
       id: `fb-${Date.now()}`,
       category,
       utilityId: target.utilityId,
@@ -252,7 +293,16 @@
       author,
       createdAt: new Date().toISOString(),
       status: "open",
+      visibility: "admin",
     };
+
+    if (pendingScreenshot?.screenshotBase64) {
+      post.screenshotMime = pendingScreenshot.screenshotMime;
+      post.screenshotBase64 = pendingScreenshot.screenshotBase64;
+      post.hasScreenshot = true;
+    }
+
+    return post;
   }
 
   async function onSubmit(event) {
@@ -260,7 +310,7 @@
     setStatus("");
 
     if (!boardReady) {
-      setStatus("게시판이 아직 연결되지 않았습니다. docs/feedback-firebase-setup.md 를 참고해 주세요.", true);
+      setStatus("게시판이 아직 연결되지 않았습니다. 관리자에게 문의해 주세요.", true);
       return;
     }
 
@@ -282,16 +332,16 @@
       else await fb.addPost(post);
       sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       els.form.reset();
+      clearScreenshotPreview();
       await loadCatalog();
-      setStatus("의견이 등록되었습니다. 감사합니다!");
-      await loadPosts();
+      setStatus("의견이 등록되었습니다. 관리자가 확인합니다. 감사합니다!");
     } catch (err) {
       console.error("[HyoT feedback submit]", err);
       const code = err?.code || "";
       if (code === "permission-denied") {
         setStatus("등록이 거부되었습니다. Firestore 보안 규칙을 확인해 주세요.", true);
       } else {
-        setStatus("등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", true);
+        setStatus(err.message || "등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", true);
       }
     } finally {
       refreshSubmitButton();
@@ -305,7 +355,6 @@
         boardReady = true;
         useGithub = false;
         updateSubmitMode();
-        await loadPosts();
         return;
       } catch (err) {
         console.warn("[HyoT feedback] Firebase init failed:", err);
@@ -316,7 +365,13 @@
       boardReady = true;
       useRelay = true;
       updateSubmitMode();
-      await loadPosts();
+      return;
+    }
+
+    if (ghBackend?.canSubmit?.()) {
+      boardReady = true;
+      useGithub = true;
+      updateSubmitMode();
       return;
     }
 
@@ -330,6 +385,8 @@
 
   updateSubmitMode();
   els.form.addEventListener("submit", onSubmit);
+  els.screenshot?.addEventListener("change", onScreenshotChange);
+  els.screenshotClear?.addEventListener("click", clearScreenshotPreview);
   loadCatalog();
   boot();
 })();

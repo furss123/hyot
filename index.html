@@ -13,7 +13,7 @@
   <title>HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20260525">
+  <link rel="stylesheet" href="css/style.css?v=20260529">
 </head>
 <body>
   <div class="page-bg" aria-hidden="true"></div>
@@ -51,10 +51,10 @@
     <div class="container">
       <header class="feedback-board__header">
         <h2 id="feedback-board-title" class="feedback-board__title">의견 게시판</h2>
-        <p class="feedback-board__desc">개선사항, 버그·오류, 사용 중 불편한 점을 알려 주세요.</p>
+        <p class="feedback-board__desc">개선사항, 버그·오류, 사용 중 불편한 점을 알려 주세요. 등록된 내용은 <strong>관리자만</strong> 확인합니다.</p>
       </header>
 
-      <div class="feedback-board__layout">
+      <div class="feedback-board__layout feedback-board__layout--submit-only">
         <form id="feedback-form" class="feedback-form" novalidate>
           <h3 class="feedback-form__heading">의견 남기기</h3>
 
@@ -80,12 +80,22 @@
           </label>
 
           <label class="feedback-field">
+            <span class="feedback-field__label">스크린샷 (선택)</span>
+            <input id="feedback-screenshot" class="feedback-field__input feedback-field__file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <span class="feedback-form__hint">화면 캡처 1장 · PNG/JPG/WebP · 최대 2MB (자동 압축)</span>
+          </label>
+          <div id="feedback-screenshot-preview" class="feedback-screenshot-preview" hidden>
+            <img id="feedback-screenshot-img" class="feedback-screenshot-preview__img" alt="첨부 미리보기">
+            <button type="button" class="feedback-screenshot-preview__clear" id="feedback-screenshot-clear">첨부 제거</button>
+          </div>
+
+          <label class="feedback-field">
             <span class="feedback-field__label">이름 (선택)</span>
             <input id="feedback-author" class="feedback-field__input" type="text" maxlength="24" placeholder="익명">
           </label>
 
           <p id="feedback-ready-hint" class="feedback-form__hint feedback-form__hint--ok" hidden>
-            로그인 없이 바로 등록할 수 있습니다.
+            로그인 없이 등록할 수 있습니다. 다른 이용자에게는 공개되지 않으며 관리자만 확인합니다.
           </p>
           <p id="feedback-setup-hint" class="feedback-form__hint" hidden>
             게시판 등록 준비 중입니다. 관리자에게 문의해 주세요.
@@ -96,11 +106,14 @@
           <button type="submit" class="btn-download feedback-form__submit" id="feedback-submit">의견 등록</button>
         </form>
 
-        <div class="feedback-list-panel">
-          <h3 class="feedback-list-panel__heading">등록된 의견</h3>
-          <ul id="feedback-list" class="feedback-list" role="list"></ul>
-          <p id="feedback-empty" class="feedback-empty" hidden>아직 등록된 의견이 없습니다. 첫 의견을 남겨 보세요.</p>
-        </div>
+        <aside class="feedback-privacy-panel" aria-label="등록 안내">
+          <h3 class="feedback-privacy-panel__heading">등록 안내</h3>
+          <ul class="feedback-privacy-panel__list">
+            <li>등록하신 의견·스크린샷은 <strong>관리자만</strong> 볼 수 있습니다.</li>
+            <li>이 페이지에는 다른 이용자의 글이 표시되지 않습니다.</li>
+            <li>처리 결과가 필요하면 이름(선택)을 남겨 주세요.</li>
+          </ul>
+        </aside>
       </div>
     </div>
   </section>
@@ -113,7 +126,7 @@
     </div>
   </footer>
 
-  <script src="js/theme.js?v=20260527"></script>
+  <script src="js/theme.js?v=20260528"></script>
   <script src="js/platforms.js?v=20260524"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -123,7 +136,7 @@
   <script src="js/feedback-config.js?v=20260525"></script>
   <script src="js/feedback-auth.js?v=20260526"></script>
   <script src="js/feedback-relay.js?v=20260526"></script>
-  <script src="js/feedback.js?v=20260525" defer></script>
+  <script src="js/feedback.js?v=20260529" defer></script>
   <script src="js/app.js?v=20260527" defer></script>
   <script>
     if (sessionStorage.getItem("hyot_admin_session") === "1") {

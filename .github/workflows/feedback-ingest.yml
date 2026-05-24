@@ -34,7 +34,7 @@ jobs:
             const path = "data/feedback.json";
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const branches = ["main", "gh-pages"];
+            const branches = ["main"];
 
             for (const branch of branches) {
               let sha;

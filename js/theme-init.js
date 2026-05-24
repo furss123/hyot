@@ -10,7 +10,7 @@
   var root = document.documentElement;
   root.setAttribute("data-theme", m);
   root.setAttribute("data-resolved-theme", resolved);
-  root.style.colorScheme = resolved;
+  root.style.colorScheme = m === "system" ? "light dark" : resolved;
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", resolved === "light" ? "#eceef5" : "#0c0f1a");
 })();

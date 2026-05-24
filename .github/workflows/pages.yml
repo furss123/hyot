@@ -85,6 +85,11 @@ jobs:
           FEEDBACK_INGEST_KEY: ${{ secrets.FEEDBACK_INGEST_KEY }}
           HYOT_FEEDBACK_RELAY_URL: ${{ secrets.HYOT_FEEDBACK_RELAY_URL }}
 
+      - name: Exclude admin-only feedback data from public site
+        run: |
+          rm -f data/feedback.json
+          rm -rf feedback-attachments
+
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:

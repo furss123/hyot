@@ -18,5 +18,11 @@ window.HYOT_FEEDBACK_CONFIG = {
     bodyMax: 1200,
     authorMax: 24,
     submitCooldownMs: 60000,
+    screenshotMaxInputBytes: 2 * 1024 * 1024,
+    screenshotMaxOutputBytes: 420000,
+    screenshotMaxDimension: 1280,
+    screenshotQuality: 0.82,
   },
+  /** 공개 사이트에 올리지 않음 — main 브랜치 + 관리자만 조회 */
+  adminOnlyData: true,
 };
