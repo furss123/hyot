@@ -1,0 +1,32 @@
+name: Bootstrap Firebase
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_rules:
+        description: Deploy firestore.rules to project
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rules:
+    if: ${{ inputs.deploy_rules }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: w9jds/setup-firebase@v1
+        with:
+          project_id: ${{ secrets.HYOT_FIREBASE_PROJECT_ID }}
+
+      - name: Deploy Firestore rules
+        run: npx firebase-tools@13.35.1 deploy --only firestore:rules --project "${{ secrets.HYOT_FIREBASE_PROJECT_ID }}"

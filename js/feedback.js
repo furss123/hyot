@@ -1,10 +1,11 @@
 /**
- * HyoT — 의견 게시판 (Firebase Firestore)
+ * HyoT — 의견 게시판 (Firebase 우선, GitHub 폴백)
  */
 (function () {
   const cfg = window.HYOT_FEEDBACK_CONFIG;
   const fb = window.HyotFirebaseFeedback;
-  if (!cfg || !fb) return;
+  const ghBackend = window.HyotFeedbackGithub;
+  if (!cfg) return;
 
   const COOLDOWN_KEY = "hyot_feedback_last_submit";
 
@@ -29,6 +30,7 @@
   if (!els.form) return;
 
   let boardReady = false;
+  let useGithub = false;
 
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
@@ -193,7 +195,7 @@
   async function loadPosts() {
     if (!boardReady) return;
     try {
-      const posts = await fb.listPosts();
+      const posts = useGithub ? await ghBackend.listPosts() : await fb.listPosts();
       renderPosts(posts);
     } catch (err) {
       console.error("[HyoT feedback]", err);
@@ -269,7 +271,8 @@
 
     try {
       setStatus("등록 중입니다… 잠시만 기다려 주세요.");
-      await fb.addPost(post);
+      if (useGithub) await ghBackend.submitFeedback(post);
+      else await fb.addPost(post);
       sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       els.form.reset();
       await loadCatalog();
@@ -289,24 +292,36 @@
   }
 
   async function boot() {
-    if (!fb.isConfigured()) {
-      boardReady = false;
-      updateSubmitMode();
-      setStatus("게시판 연결 설정이 필요합니다. (Firebase)", true);
-      return;
+    if (fb?.isConfigured?.()) {
+      try {
+        await fb.init();
+        boardReady = true;
+        useGithub = false;
+        updateSubmitMode();
+        await loadPosts();
+        return;
+      } catch (err) {
+        console.warn("[HyoT feedback] Firebase init failed:", err);
+      }
     }
 
-    try {
-      await fb.init();
-      boardReady = true;
-      updateSubmitMode();
-      await loadPosts();
-    } catch (err) {
-      console.error("[HyoT feedback boot]", err);
-      boardReady = false;
-      updateSubmitMode();
-      setStatus("게시판을 불러오지 못했습니다.", true);
+    if (ghBackend?.isAvailable?.()) {
+      const ok = await ghBackend.probeToken();
+      if (ok) {
+        boardReady = true;
+        useGithub = true;
+        updateSubmitMode();
+        await loadPosts();
+        return;
+      }
     }
+
+    boardReady = false;
+    updateSubmitMode();
+    setStatus(
+      "게시판 연결이 필요합니다. Firebase 설정(docs/feedback-firebase-setup.md) 또는 GitHub 토큰을 확인해 주세요.",
+      true
+    );
   }
 
   updateSubmitMode();

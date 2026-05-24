@@ -1,0 +1,60 @@
+name: Configure Firebase secrets
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_key:
+        description: Firebase apiKey
+        required: true
+      project_id:
+        description: Firebase projectId
+        required: true
+      app_id:
+        description: Firebase appId
+        required: true
+      auth_domain:
+        description: authDomain (optional)
+        required: false
+      messaging_sender_id:
+        description: messagingSenderId (optional)
+        required: false
+      storage_bucket:
+        description: storageBucket (optional)
+        required: false
+      redeploy_pages:
+        description: Redeploy GitHub Pages after saving secrets
+        type: boolean
+        default: true
+
+permissions:
+  actions: write
+  secrets: write
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save Firebase secrets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          gh secret set HYOT_FIREBASE_API_KEY --repo "$REPO" --body "${{ inputs.api_key }}"
+          gh secret set HYOT_FIREBASE_PROJECT_ID --repo "$REPO" --body "${{ inputs.project_id }}"
+          gh secret set HYOT_FIREBASE_APP_ID --repo "$REPO" --body "${{ inputs.app_id }}"
+          if [ -n "${{ inputs.auth_domain }}" ]; then
+            gh secret set HYOT_FIREBASE_AUTH_DOMAIN --repo "$REPO" --body "${{ inputs.auth_domain }}"
+          fi
+          if [ -n "${{ inputs.messaging_sender_id }}" ]; then
+            gh secret set HYOT_FIREBASE_MESSAGING_SENDER_ID --repo "$REPO" --body "${{ inputs.messaging_sender_id }}"
+          fi
+          if [ -n "${{ inputs.storage_bucket }}" ]; then
+            gh secret set HYOT_FIREBASE_STORAGE_BUCKET --repo "$REPO" --body "${{ inputs.storage_bucket }}"
+          fi
+
+      - name: Redeploy Pages
+        if: ${{ inputs.redeploy_pages }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run "Deploy GitHub Pages" --repo "${{ github.repository }}"
