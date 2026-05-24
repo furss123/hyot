@@ -15,8 +15,8 @@
   const cfg = window.HYOT_ADMIN_CONFIG;
   const secrets = window.HYOT_ADMIN_SECRETS;
 
-  /** 브라우저에서 GitHub API로 안정 업로드 가능한 최대 크기 */
-  const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+  /** 브라우저에서 GitHub Contents API 업로드 시도 상한 (50MB 초과는 직접 등록) */
+  const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
   if (!cfg) return;
 
@@ -569,7 +569,7 @@
     }
     toggleManualFileUI();
     toast(
-      "25MB 초과 파일은 브라우저 업로드가 불가합니다. 저장소에 직접 올린 뒤 경로로 등록하세요.",
+      "50MB 초과 파일은 브라우저 업로드가 불가합니다. 저장소에 직접 올린 뒤 경로로 등록하세요.",
       true
     );
     return true;
@@ -701,7 +701,7 @@
       return;
     }
     if (!manual && file && file.size > MAX_UPLOAD_BYTES) {
-      toast("25MB 이하 파일만 브라우저에서 업로드할 수 있습니다.", true);
+      toast("50MB 이하 파일만 브라우저에서 업로드할 수 있습니다.", true);
       return;
     }
     if (manual && file) {
