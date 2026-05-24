@@ -20,7 +20,6 @@
     status: document.getElementById("feedback-status"),
     utility: document.getElementById("feedback-utility"),
     category: document.getElementById("feedback-category"),
-    title: document.getElementById("feedback-title"),
     body: document.getElementById("feedback-body"),
     author: document.getElementById("feedback-author"),
     submit: document.getElementById("feedback-submit"),
@@ -271,9 +270,9 @@
       cat.className = `feedback-item__category feedback-item__category--${post.category}`;
       cat.textContent = categoryMap[post.category] || post.category;
 
-      const title = document.createElement("h3");
-      title.className = "feedback-item__title";
-      title.textContent = post.title;
+      const heading = document.createElement("h3");
+      heading.className = "feedback-item__title";
+      heading.textContent = post.utilityLabel || post.utilityName || post.title || "의견";
 
       const meta = document.createElement("p");
       meta.className = "feedback-item__meta";
@@ -284,16 +283,7 @@
       body.className = "feedback-item__body";
       body.textContent = post.body;
 
-      li.append(cat, title);
-
-      if (post.utilityLabel || post.utilityName) {
-        const target = document.createElement("p");
-        target.className = "feedback-item__target";
-        target.textContent = post.utilityLabel || post.utilityName;
-        li.appendChild(target);
-      }
-
-      li.append(meta, body);
+      li.append(cat, heading, meta, body);
       fragment.appendChild(li);
     });
 

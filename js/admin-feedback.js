@@ -164,7 +164,7 @@
 
       const title = document.createElement("strong");
       title.className = "admin-feedback-item__title";
-      title.textContent = post.title;
+      title.textContent = post.utilityLabel || post.utilityName || post.title || "의견";
 
       head.append(cat, title);
 
