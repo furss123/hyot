@@ -4,7 +4,7 @@ param(
   [string]$Message = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $repoRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $repoRoot
 $env:GIT_EDITOR = "true"
