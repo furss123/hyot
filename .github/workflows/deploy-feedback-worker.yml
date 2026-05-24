@@ -72,7 +72,6 @@ jobs:
       - name: Save relay URL secret
         if: steps.cf.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_URL: ${{ steps.wrangler.outputs.deployment-url }}
         run: |
           RELAY_URL="${DEPLOY_URL}"
@@ -80,8 +79,18 @@ jobs:
             echo "::error::Worker deployed but deployment-url was empty. Check wrangler-action output."
             exit 1
           fi
-          gh secret set HYOT_FEEDBACK_RELAY_URL --repo "${{ github.repository }}" --body "$RELAY_URL"
+          echo "relay_url=$RELAY_URL" >> "$GITHUB_OUTPUT"
           echo "Relay URL: $RELAY_URL"
+        id: relay
+
+      - name: Persist relay URL (optional)
+        if: steps.cf.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELAY_URL: ${{ steps.relay.outputs.relay_url }}
+        run: |
+          gh secret set HYOT_FEEDBACK_RELAY_URL --repo "${{ github.repository }}" --body "$RELAY_URL"
 
       - name: Persist Cloudflare credentials (optional)
         if: steps.cf.outputs.skip != 'true' && github.event.inputs.save_secrets == 'true'

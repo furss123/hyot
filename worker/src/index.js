@@ -48,11 +48,11 @@ export default {
     };
 
     try {
-      await persistPost({ owner, repo, post, headers, branch: "main" });
+      await persistPost({ owner, repo, post, headers, branch: "gh-pages" });
       try {
-        await persistPost({ owner, repo, post, headers, branch: "gh-pages" });
+        await persistPost({ owner, repo, post, headers, branch: "main" });
       } catch {
-        /* gh-pages optional */
+        /* main optional — public site reads gh-pages */
       }
     } catch (err) {
       try {
