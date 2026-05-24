@@ -7,13 +7,10 @@ const DATA_URL = "data/data.json";
 const els = {
   siteTitle: document.getElementById("site-title"),
   siteTagline: document.getElementById("site-tagline"),
-  siteDescription: document.getElementById("site-description"),
   status: document.getElementById("status"),
   grid: document.getElementById("utility-grid"),
   empty: document.getElementById("empty-state"),
   footerYear: document.getElementById("footer-year"),
-  search: document.getElementById("search-input"),
-  resultCount: document.getElementById("result-count"),
 };
 
 let allUtilities = [];
@@ -60,29 +57,6 @@ function normalizeUtilities(raw = []) {
     console.warn(`[HyoT] ${skipped}개 항목이 필수 필드 누락으로 제외되었습니다.`);
   }
   return sortByUpdatedAt(valid);
-}
-
-function filterUtilities(query) {
-  const q = query.trim().toLowerCase();
-  if (!q) return allUtilities;
-  return allUtilities.filter(
-    (item) =>
-      item.name.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q) ||
-      (item.version && item.version.toLowerCase().includes(q))
-  );
-}
-
-function updateResultCount(shown, total) {
-  if (!total) {
-    els.resultCount.textContent = "";
-    return;
-  }
-  if (shown === total) {
-    els.resultCount.textContent = `총 ${total}개`;
-  } else {
-    els.resultCount.textContent = `${shown}개 / 전체 ${total}개`;
-  }
 }
 
 function createDownloadIcon() {
@@ -154,7 +128,6 @@ function applySiteMeta(site = {}) {
   }
   if (site.tagline) els.siteTagline.textContent = site.tagline;
   if (site.description) {
-    els.siteDescription.textContent = site.description;
     const desc = document.querySelector('meta[name="description"]');
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (desc) desc.setAttribute("content", site.description);
@@ -165,18 +138,10 @@ function applySiteMeta(site = {}) {
 function renderUtilities(utilities = []) {
   els.grid.replaceChildren();
 
-  if (!allUtilities.length) {
+  if (!utilities.length) {
     els.empty.hidden = false;
     els.empty.textContent =
       "등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.";
-    updateResultCount(0, 0);
-    return;
-  }
-
-  if (!utilities.length) {
-    els.empty.hidden = false;
-    els.empty.textContent = "검색 결과가 없습니다. 다른 키워드로 시도해 보세요.";
-    updateResultCount(0, allUtilities.length);
     return;
   }
 
@@ -184,18 +149,11 @@ function renderUtilities(utilities = []) {
   const fragment = document.createDocumentFragment();
   utilities.forEach((item) => fragment.appendChild(createCard(item)));
   els.grid.appendChild(fragment);
-  updateResultCount(utilities.length, allUtilities.length);
-}
-
-function onSearchInput() {
-  renderUtilities(filterUtilities(els.search.value));
 }
 
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
   setStatus("자료 목록을 불러오는 중…");
-
-  els.search.addEventListener("input", onSearchInput);
 
   try {
     const res = await fetch(DATA_URL, { cache: "no-store" });
