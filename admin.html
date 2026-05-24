@@ -15,7 +15,7 @@
   <header class="site-header">
     <div class="container site-header__inner">
       <a href="./" class="brand brand--link">
-        <img class="brand__logo" src="assets/logo.png" alt="" width="72" height="72">
+        <img class="brand__logo" src="assets/logo.png" alt="" width="86" height="86">
         <div>
           <p class="brand__eyebrow">HyoT의 자료실</p>
           <h1 class="brand__title brand__title--sm">관리자</h1>
@@ -28,7 +28,7 @@
   <main class="site-main admin-page">
     <div class="container admin-page__container">
 
-      <section id="admin-login-view" class="admin-card">
+      <section id="admin-login-view" class="admin-card admin-card--narrow">
         <h2 class="admin-card__title">관리자 로그인</h2>
         <p class="admin-lead">자료 등록·수정은 관리자만 가능합니다.</p>
         <form id="admin-login-form" class="admin-form">
@@ -54,55 +54,70 @@
         </form>
       </section>
 
-      <section id="admin-panel-view" class="admin-card" hidden>
-        <div class="admin-toolbar">
+      <section id="admin-panel-view" class="admin-dashboard" hidden>
+        <header class="admin-dash-header">
           <div>
             <p class="admin-card__subtitle">자료 관리</p>
             <p id="admin-user-label" class="admin-user"></p>
           </div>
           <button type="button" class="admin-link-btn" id="admin-logout-btn">로그아웃</button>
-        </div>
+        </header>
 
-        <div class="admin-mode-tabs">
-          <button type="button" class="admin-mode admin-mode--active" id="admin-mode-new">새 등록</button>
-          <button type="button" class="admin-mode" id="admin-mode-edit">수정</button>
-        </div>
+        <p id="admin-panel-status" class="admin-status admin-status--banner" role="status"></p>
 
-        <form id="admin-utility-form" class="admin-form">
-          <div id="admin-edit-select-wrap" class="admin-field" hidden>
-            <span class="admin-field__label">항목 선택</span>
-            <select id="admin-edit-select" class="admin-field__input admin-field__select"></select>
+        <div class="admin-dashboard__grid">
+          <aside class="admin-list-panel admin-card">
+            <button type="button" class="admin-new-btn" id="admin-new-btn">+ 새 자료 등록</button>
+            <p id="admin-list-count" class="admin-list-count"></p>
+            <ul id="admin-item-list" class="admin-item-list" role="list"></ul>
+            <p id="admin-list-empty" class="admin-list-empty" hidden>등록된 자료가 없습니다.</p>
+          </aside>
+
+          <div class="admin-form-panel admin-card">
+            <h2 id="admin-form-title" class="admin-form-panel__title">새 자료 등록</h2>
+            <p id="admin-form-subtitle" class="admin-form-panel__subtitle">왼쪽 목록에서 항목을 선택하면 수정할 수 있습니다.</p>
+
+            <form id="admin-utility-form" class="admin-form">
+              <label class="admin-field">
+                <span class="admin-field__label">프로그램 이름</span>
+                <input id="admin-name" class="admin-field__input" type="text" required maxlength="80" placeholder="예: 화면 캡쳐 도구">
+              </label>
+
+              <label class="admin-field">
+                <span class="admin-field__label">
+                  설명
+                  <span id="admin-desc-count" class="admin-char-count">0 / 200</span>
+                </span>
+                <textarea id="admin-description" class="admin-field__input admin-field__textarea" rows="3" required maxlength="200" placeholder="한두 줄로 간단히 설명해 주세요."></textarea>
+              </label>
+
+              <div class="admin-field">
+                <span class="admin-field__label">
+                  파일 업로드
+                  <span id="admin-file-required" class="admin-required">*</span>
+                </span>
+                <label class="admin-dropzone" id="admin-dropzone">
+                  <input id="admin-file" class="admin-dropzone__input" type="file">
+                  <span class="admin-dropzone__icon" aria-hidden="true">↑</span>
+                  <span class="admin-dropzone__text" id="admin-dropzone-text">클릭하거나 파일을 끌어다 놓으세요</span>
+                  <span class="admin-dropzone__hint" id="admin-file-hint">ZIP, EXE 등 (최대 50MB)</span>
+                </label>
+                <p id="admin-current-file" class="admin-current-file" hidden></p>
+              </div>
+
+              <div class="admin-meta-row">
+                <span class="admin-meta-badge">업데이트</span>
+                <span id="admin-updated-at" class="admin-meta-value"></span>
+                <span class="admin-hint admin-meta-hint">저장 시 오늘 날짜로 자동 반영</span>
+              </div>
+
+              <div class="admin-actions">
+                <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
+                <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
+              </div>
+            </form>
           </div>
-
-          <label class="admin-field">
-            <span class="admin-field__label">프로그램 이름</span>
-            <input id="admin-name" class="admin-field__input" type="text" required maxlength="80">
-          </label>
-
-          <label class="admin-field">
-            <span class="admin-field__label">설명</span>
-            <textarea id="admin-description" class="admin-field__input admin-field__textarea" rows="3" required maxlength="200"></textarea>
-          </label>
-
-          <label class="admin-field">
-            <span class="admin-field__label">파일 업로드 <span id="admin-file-required" class="admin-required">*</span></span>
-            <input id="admin-file" class="admin-field__file" type="file">
-            <span id="admin-file-hint" class="admin-hint">ZIP, EXE 등 배포 파일을 선택하세요.</span>
-          </label>
-
-          <label class="admin-field">
-            <span class="admin-field__label">업데이트 날짜</span>
-            <input id="admin-updated-at" class="admin-field__input admin-field__readonly" type="text" readonly>
-            <span class="admin-hint">저장 시 오늘 날짜로 자동 설정됩니다.</span>
-          </label>
-
-          <p id="admin-panel-status" class="admin-status" role="status"></p>
-
-          <div class="admin-actions">
-            <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
-            <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
-          </div>
-        </form>
+        </div>
       </section>
 
     </div>

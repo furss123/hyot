@@ -26,14 +26,20 @@
     logoutBtn: document.getElementById("admin-logout-btn"),
     userLabel: document.getElementById("admin-user-label"),
     utilityForm: document.getElementById("admin-utility-form"),
-    modeNew: document.getElementById("admin-mode-new"),
-    modeEdit: document.getElementById("admin-mode-edit"),
-    editSelect: document.getElementById("admin-edit-select"),
-    editSelectWrap: document.getElementById("admin-edit-select-wrap"),
+    newBtn: document.getElementById("admin-new-btn"),
+    itemList: document.getElementById("admin-item-list"),
+    listCount: document.getElementById("admin-list-count"),
+    listEmpty: document.getElementById("admin-list-empty"),
+    formTitle: document.getElementById("admin-form-title"),
+    formSubtitle: document.getElementById("admin-form-subtitle"),
     name: document.getElementById("admin-name"),
     description: document.getElementById("admin-description"),
+    descCount: document.getElementById("admin-desc-count"),
     file: document.getElementById("admin-file"),
+    dropzone: document.getElementById("admin-dropzone"),
+    dropzoneText: document.getElementById("admin-dropzone-text"),
     fileHint: document.getElementById("admin-file-hint"),
+    currentFile: document.getElementById("admin-current-file"),
     updatedAt: document.getElementById("admin-updated-at"),
     submitBtn: document.getElementById("admin-submit-btn"),
     deleteBtn: document.getElementById("admin-delete-btn"),
@@ -42,12 +48,11 @@
   };
 
   let catalogData = null;
+  let selectedId = null;
   let isEditMode = false;
 
   function getAuth() {
-    if (!secrets?.adminId || !secrets?.adminPasswordSha256) {
-      return null;
-    }
+    if (!secrets?.adminId || !secrets?.adminPasswordSha256) return null;
     return secrets;
   }
 
@@ -85,6 +90,17 @@
     return local.toISOString().slice(0, 10);
   }
 
+  function formatDateKo(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(date);
+  }
+
   function formatFileSize(bytes) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -107,9 +123,39 @@
   }
 
   function refreshUpdatedAtField() {
-    if (els.updatedAt) {
-      els.updatedAt.value = todayISO();
+    els.updatedAt.textContent = formatDateKo(todayISO());
+  }
+
+  function updateDescCount() {
+    const len = els.description.value.length;
+    els.descCount.textContent = `${len} / 200`;
+  }
+
+  function updateFileUI(file) {
+    if (file) {
+      els.dropzoneText.textContent = file.name;
+      els.fileHint.textContent = formatFileSize(file.size);
+    } else if (isEditMode && getSelectedItem()) {
+      const item = getSelectedItem();
+      els.dropzoneText.textContent = "새 파일로 교체하려면 선택하세요";
+      els.fileHint.textContent = "선택하지 않으면 기존 파일 유지";
+    } else {
+      els.dropzoneText.textContent = "클릭하거나 파일을 끌어다 놓으세요";
+      els.fileHint.textContent = "ZIP, EXE 등 (최대 50MB)";
     }
+  }
+
+  function showCurrentFile(item) {
+    if (!item) {
+      els.currentFile.hidden = true;
+      return;
+    }
+    const parts = [];
+    if (item.fileName || item.file) parts.push(item.fileName || item.file);
+    if (item.fileSize) parts.push(item.fileSize);
+    if (item.updatedAt) parts.push(`업데이트 ${formatDateKo(item.updatedAt)}`);
+    els.currentFile.textContent = `현재 파일: ${parts.join(" · ")}`;
+    els.currentFile.hidden = false;
   }
 
   async function githubApi(path, options = {}) {
@@ -122,9 +168,7 @@
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        ...(options.body
-          ? { "Content-Type": "application/json" }
-          : {}),
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...options.headers,
       },
     });
@@ -167,11 +211,7 @@
   }
 
   async function writeRepoFile(path, base64Content, sha, message) {
-    const body = {
-      message,
-      content: base64Content,
-      branch: cfg.github.branch,
-    };
+    const body = { message, content: base64Content, branch: cfg.github.branch };
     if (sha) body.sha = sha;
     await githubApi(
       `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${path}`,
@@ -203,46 +243,82 @@
     return json;
   }
 
-  function populateEditSelect() {
+  function getSelectedItem() {
+    if (!selectedId) return null;
+    return catalogData?.utilities?.find((u) => u.id === selectedId) || null;
+  }
+
+  function renderItemList() {
     const utilities = catalogData?.utilities || [];
-    els.editSelect.replaceChildren();
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "수정할 항목 선택";
-    els.editSelect.append(placeholder);
+    els.itemList.replaceChildren();
+    els.listCount.textContent =
+      utilities.length > 0 ? `총 ${utilities.length}개` : "";
+    els.listEmpty.hidden = utilities.length > 0;
+
     utilities.forEach((item) => {
-      const opt = document.createElement("option");
-      opt.value = item.id;
-      opt.textContent = item.name;
-      els.editSelect.append(opt);
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "admin-item";
+      btn.dataset.id = item.id;
+      if (item.id === selectedId) btn.classList.add("admin-item--active");
+
+      const name = document.createElement("span");
+      name.className = "admin-item__name";
+      name.textContent = item.name;
+
+      const meta = document.createElement("span");
+      meta.className = "admin-item__meta";
+      const metaParts = [formatDateKo(item.updatedAt)];
+      if (item.fileSize) metaParts.push(item.fileSize);
+      meta.textContent = metaParts.join(" · ");
+
+      btn.append(name, meta);
+      btn.addEventListener("click", () => selectItem(item.id));
+      li.append(btn);
+      els.itemList.append(li);
     });
   }
 
-  function setMode(edit) {
-    isEditMode = edit;
-    els.modeNew.classList.toggle("admin-mode--active", !edit);
-    els.modeEdit.classList.toggle("admin-mode--active", edit);
-    els.editSelectWrap.hidden = !edit;
-    els.deleteBtn.hidden = !edit;
-    els.fileRequired.hidden = edit;
-    els.file.required = !edit;
+  function selectItem(id) {
+    const item = catalogData?.utilities?.find((u) => u.id === id);
+    if (!item) return;
+    selectedId = id;
+    isEditMode = true;
+    els.formTitle.textContent = "자료 수정";
+    els.formSubtitle.textContent = "내용을 수정한 뒤 저장하세요.";
+    els.deleteBtn.hidden = false;
+    els.fileRequired.hidden = true;
+    els.file.required = false;
+    fillFormFromItem(item);
+    renderItemList();
+  }
 
-    if (edit) {
-      els.fileHint.textContent =
-        "새 파일을 선택하지 않으면 기존 파일을 유지합니다.";
-    } else {
-      els.fileHint.textContent = "ZIP, EXE 등 배포 파일을 선택하세요.";
-      els.utilityForm.reset();
-      els.editSelect.value = "";
-    }
+  function startNewItem() {
+    selectedId = null;
+    isEditMode = false;
+    els.formTitle.textContent = "새 자료 등록";
+    els.formSubtitle.textContent = "필수 항목을 입력하고 파일을 업로드하세요.";
+    els.deleteBtn.hidden = true;
+    els.fileRequired.hidden = false;
+    els.file.required = true;
+    els.utilityForm.reset();
+    els.currentFile.hidden = true;
+    updateDescCount();
     refreshUpdatedAtField();
+    updateFileUI(null);
+    renderItemList();
+    els.name.focus();
   }
 
   function fillFormFromItem(item) {
     els.name.value = item.name || "";
     els.description.value = item.description || "";
     els.file.value = "";
+    updateDescCount();
     refreshUpdatedAtField();
+    showCurrentFile(item);
+    updateFileUI(null);
   }
 
   function showView(loggedIn) {
@@ -254,10 +330,8 @@
     const user = sessionStorage.getItem(STORAGE_USER) || "관리자";
     els.userLabel.textContent = `${user} 님`;
     showView(true);
-    refreshUpdatedAtField();
     await loadCatalog();
-    populateEditSelect();
-    setMode(false);
+    startNewItem();
     setPanelStatus("");
   }
 
@@ -287,7 +361,6 @@
         setLoginError("아이디가 올바르지 않습니다.");
         return;
       }
-
       const hash = await sha256Hex(password);
       if (hash !== auth.adminPasswordSha256) {
         setLoginError("비밀번호가 올바르지 않습니다.");
@@ -317,15 +390,10 @@
     sessionStorage.removeItem(STORAGE_USER);
     sessionStorage.removeItem(STORAGE_SESSION);
     catalogData = null;
+    selectedId = null;
     showView(false);
     setPanelStatus("");
     els.loginForm.reset();
-  }
-
-  function getSelectedItem() {
-    const id = els.editSelect.value;
-    if (!id) return null;
-    return catalogData?.utilities?.find((u) => u.id === id) || null;
   }
 
   async function uploadDownloadFile(file) {
@@ -346,6 +414,14 @@
       sha ? `update file: ${safeName}` : `upload: ${safeName}`
     );
     return { path, fileName: file.name, fileSize: formatFileSize(file.size) };
+  }
+
+  function assignFile(file) {
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    els.file.files = dt.files;
+    updateFileUI(file);
   }
 
   async function handleSubmit(e) {
@@ -381,7 +457,7 @@
       if (isEditMode) {
         const existing = getSelectedItem();
         if (!existing) {
-          setPanelStatus("수정할 항목을 선택하세요.", true);
+          setPanelStatus("왼쪽 목록에서 수정할 항목을 선택하세요.", true);
           return;
         }
 
@@ -407,14 +483,14 @@
           fileSize,
         };
 
-        const content = JSON.stringify({ ...json, utilities }, null, 2) + "\n";
         await writeRepoFile(
           cfg.dataPath,
-          textToBase64(content),
+          textToBase64(JSON.stringify({ ...json, utilities }, null, 2) + "\n"),
           sha,
           `update utility: ${name}`
         );
         setPanelStatus(`「${name}」 수정 완료. 사이트 반영까지 1~2분 걸릴 수 있습니다.`);
+        selectedId = existing.id;
       } else {
         const uploaded = await uploadDownloadFile(fileInput);
         let id = slugify(fileInput.name);
@@ -432,21 +508,21 @@
           fileSize: uploaded.fileSize,
         });
 
-        const content = JSON.stringify({ ...json, utilities }, null, 2) + "\n";
         await writeRepoFile(
           cfg.dataPath,
-          textToBase64(content),
+          textToBase64(JSON.stringify({ ...json, utilities }, null, 2) + "\n"),
           sha,
           `add utility: ${name}`
         );
         setPanelStatus(`「${name}」 등록 완료. 사이트 반영까지 1~2분 걸릴 수 있습니다.`);
+        selectedId = id;
+        isEditMode = true;
       }
 
       await loadCatalog();
-      populateEditSelect();
-      els.utilityForm.reset();
-      refreshUpdatedAtField();
-      setMode(false);
+      renderItemList();
+      if (selectedId) selectItem(selectedId);
+      else startNewItem();
     } catch (err) {
       setPanelStatus(err.message || "저장에 실패했습니다.", true);
     } finally {
@@ -476,17 +552,15 @@
       const utilities = (json.utilities || []).filter(
         (u) => u.id !== existing.id
       );
-      const content = JSON.stringify({ ...json, utilities }, null, 2) + "\n";
       await writeRepoFile(
         cfg.dataPath,
-        textToBase64(content),
+        textToBase64(JSON.stringify({ ...json, utilities }, null, 2) + "\n"),
         sha,
         `remove utility: ${existing.name}`
       );
       setPanelStatus(`「${existing.name}」 삭제 완료.`);
       await loadCatalog();
-      populateEditSelect();
-      setMode(false);
+      startNewItem();
     } catch (err) {
       setPanelStatus(err.message || "삭제에 실패했습니다.", true);
     } finally {
@@ -498,18 +572,27 @@
   els.logoutBtn.addEventListener("click", handleLogout);
   els.utilityForm.addEventListener("submit", handleSubmit);
   els.deleteBtn.addEventListener("click", handleDelete);
+  els.newBtn.addEventListener("click", startNewItem);
+  els.description.addEventListener("input", updateDescCount);
 
-  els.modeNew.addEventListener("click", () => {
-    setMode(false);
-    els.utilityForm.reset();
-    refreshUpdatedAtField();
+  els.file.addEventListener("change", () => {
+    updateFileUI(els.file.files[0] || null);
   });
 
-  els.modeEdit.addEventListener("click", () => setMode(true));
+  els.dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    els.dropzone.classList.add("admin-dropzone--drag");
+  });
 
-  els.editSelect.addEventListener("change", () => {
-    const item = getSelectedItem();
-    if (item) fillFormFromItem(item);
+  els.dropzone.addEventListener("dragleave", () => {
+    els.dropzone.classList.remove("admin-dropzone--drag");
+  });
+
+  els.dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    els.dropzone.classList.remove("admin-dropzone--drag");
+    const file = e.dataTransfer?.files?.[0];
+    if (file) assignFile(file);
   });
 
   if (isLoggedIn()) {
