@@ -2,6 +2,20 @@ name: Deploy feedback relay (Cloudflare)
 
 on:
   workflow_dispatch:
+    inputs:
+      cloudflare_api_token:
+        description: "Cloudflare API Token (Edit Workers) — Secrets 없을 때 입력"
+        required: false
+        type: string
+      cloudflare_account_id:
+        description: "Cloudflare Account ID — Secrets 없을 때 입력"
+        required: false
+        type: string
+      save_secrets:
+        description: "성공 시 GitHub Secrets에 CF 토큰 저장"
+        required: false
+        type: boolean
+        default: true
   push:
     branches: [main]
     paths:
@@ -15,33 +29,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check Cloudflare credentials
+      - name: Resolve Cloudflare credentials
         id: cf
         env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SECRET_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SECRET_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          INPUT_TOKEN: ${{ github.event.inputs.cloudflare_api_token }}
+          INPUT_ACCOUNT: ${{ github.event.inputs.cloudflare_account_id }}
         run: |
+          CF_TOKEN="${INPUT_TOKEN:-$SECRET_TOKEN}"
+          CF_ACCOUNT="${INPUT_ACCOUNT:-$SECRET_ACCOUNT}"
           if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set. Skipping Worker deploy."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cloudflare credentials missing. Add CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID secrets, or run this workflow manually with inputs."
+            exit 0
           fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$CF_TOKEN"
+          echo "CF_TOKEN=$CF_TOKEN" >> "$GITHUB_ENV"
+          echo "CF_ACCOUNT=$CF_ACCOUNT" >> "$GITHUB_ENV"
 
       - name: Deploy Worker
         if: steps.cf.outputs.skip != 'true'
         id: wrangler
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ env.CF_TOKEN }}
+          accountId: ${{ env.CF_ACCOUNT }}
           command: deploy
 
       - name: Set Worker secrets
         if: steps.cf.outputs.skip != 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ env.CF_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ env.CF_ACCOUNT }}
           GITHUB_TOKEN: ${{ secrets.HYOT_FEEDBACK_TOKEN }}
           INGEST_KEY: ${{ secrets.FEEDBACK_INGEST_KEY }}
         run: |
@@ -54,9 +75,25 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_URL: ${{ steps.wrangler.outputs.deployment-url }}
         run: |
-          RELAY_URL="${DEPLOY_URL:-https://hyot-feedback.workers.dev}"
+          RELAY_URL="${DEPLOY_URL}"
+          if [ -z "$RELAY_URL" ]; then
+            echo "::error::Worker deployed but deployment-url was empty. Check wrangler-action output."
+            exit 1
+          fi
           gh secret set HYOT_FEEDBACK_RELAY_URL --repo "${{ github.repository }}" --body "$RELAY_URL"
           echo "Relay URL: $RELAY_URL"
+
+      - name: Persist Cloudflare credentials (optional)
+        if: steps.cf.outputs.skip != 'true' && github.event.inputs.save_secrets == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ github.event.inputs.cloudflare_api_token }}" ]; then
+            printf '%s' "$CF_TOKEN" | gh secret set CLOUDFLARE_API_TOKEN --repo "${{ github.repository }}"
+          fi
+          if [ -n "${{ github.event.inputs.cloudflare_account_id }}" ]; then
+            printf '%s' "$CF_ACCOUNT" | gh secret set CLOUDFLARE_ACCOUNT_ID --repo "${{ github.repository }}"
+          fi
 
       - name: Redeploy Pages
         if: steps.cf.outputs.skip != 'true'

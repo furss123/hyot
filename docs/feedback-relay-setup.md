@@ -3,15 +3,31 @@
 GitHub 토큰을 공개 사이트에 넣으면 **자동 폐기**됩니다.  
 대신 Worker가 GitHub API를 대신 호출합니다.
 
-## 1분 설정
+## 1분 설정 (Cloudflare 로그인 후)
 
-1. [Cloudflare](https://dash.cloudflare.com/sign-up) 가입 (무료)
-2. **My Profile → API Tokens → Create Token** → **Edit Cloudflare Workers** 템플릿
-3. GitHub `hyot` 저장소 **Secrets**에 추가:
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID` (대시보드 URL의 Account ID)
-4. Actions → **Deploy feedback relay (Cloudflare)** → **Run workflow**
-5. 완료 후 **Deploy GitHub Pages** 가 자동 실행되면 사이트에 반영됩니다.
+1. [API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Edit Cloudflare Workers**
+2. **Account ID** 복사 (Workers & Pages 화면 오른쪽 또는 URL)
+3. 아래 **방법 A** 또는 **B** 중 하나
+
+### 방법 A — GitHub Actions (추천)
+
+1. GitHub → **Actions** → **Deploy feedback relay (Cloudflare)** → **Run workflow**
+2. 입력란에 **API Token**, **Account ID** 붙여넣기 → Run
+3. 성공 시 `HYOT_FEEDBACK_RELAY_URL` 저장 + Pages 자동 재배포
+
+### 방법 B — PC에서 한 번에
+
+```powershell
+.\scripts\deploy-feedback-relay-local.ps1 -ApiToken "여기에_토큰" -AccountId "여기에_Account_ID"
+```
+
+또는 Secrets에 등록만:
+
+```powershell
+.\scripts\set-cloudflare-secrets.ps1 -ApiToken "..." -AccountId "..."
+```
+
+이후 Actions에서 **Deploy feedback relay (Cloudflare)** 실행.
 
 ## 확인
 
