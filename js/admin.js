@@ -14,6 +14,11 @@
 
   const cfg = window.HYOT_ADMIN_CONFIG;
   const secrets = window.HYOT_ADMIN_SECRETS;
+  const {
+    list: PLATFORMS,
+    migrateUtility,
+    getPlatformFile,
+  } = window.HYOT_PLATFORMS || { list: [] };
 
   /** 브라우저에서 GitHub Contents API 업로드 시도 상한 (50MB 초과는 직접 등록) */
   const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -48,6 +53,9 @@
     filePath: $("admin-file-path"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
+    platformStatus: $("admin-platform-status"),
+    platformRadios: () =>
+      document.querySelectorAll('input[name="admin-platform"]'),
   };
 
   let catalogData = null;
@@ -87,8 +95,78 @@
     set(1);
     return { set, end, complete: () => set(100) };
   }
-  const getItem = () =>
-    catalogData?.utilities?.find((u) => u.id === selectedId) ?? null;
+  const getItem = () => {
+    const raw = catalogData?.utilities?.find((u) => u.id === selectedId) ?? null;
+    return raw ? migrateUtility(raw) : null;
+  };
+
+  function getSelectedPlatform() {
+    const checked = document.querySelector('input[name="admin-platform"]:checked');
+    return checked?.value === "android" ? "android" : "windows";
+  }
+
+  function getPlatformMeta(platformId) {
+    return PLATFORMS.find((p) => p.id === platformId);
+  }
+
+  function syncFileAccept() {
+    const meta = getPlatformMeta(getSelectedPlatform());
+    if (els.file && meta?.accept) els.file.accept = meta.accept;
+  }
+
+  function platformBadgesHtml(item) {
+    return PLATFORMS.map((p) => {
+      const on = getPlatformFile(item, p.id) ? " admin-platform-badge--on" : "";
+      return `<span class="admin-platform-badge admin-platform-badge--${p.id}${on}" title="${escapeHtml(p.label)}">${escapeHtml(p.shortLabel)}</span>`;
+    }).join("");
+  }
+
+  function updatePlatformStatus() {
+    const box = els.platformStatus;
+    if (!box) return;
+    const item = getItem();
+    if (!item) {
+      box.hidden = true;
+      box.replaceChildren();
+      return;
+    }
+    box.hidden = false;
+    box.replaceChildren();
+    PLATFORMS.forEach((p) => {
+      const pf = getPlatformFile(item, p.id);
+      const row = document.createElement("p");
+      row.className = `admin-platform-status__row${pf ? "" : " admin-platform-status__row--empty"}`;
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("class", "admin-platform-status__icon");
+      icon.setAttribute("viewBox", "0 0 24 24");
+      icon.setAttribute("aria-hidden", "true");
+      if (p.id === "windows") {
+        icon.innerHTML =
+          '<path fill="currentColor" d="M3 5.5 10.5 4.4V12H3V5.5Zm0 7.5h7.5v7.6L3 19.5V13Zm9.5-8.3L21 3.9v7.6h-8.5V4.7Zm0 9.3H21v7.6l-8.5-1.5V14Z"/>';
+      } else {
+        icon.innerHTML =
+          '<path fill="currentColor" d="M8.2 3c.4 1.1.9 2.1 1.6 3.1-.9.3-1.8.8-2.5 1.4C6.4 5.8 5.5 4.5 5 3h3.2ZM16 3c-.5 1.5-1.4 2.8-2.3 3.9-.7-.6-1.6-1.1-2.5-1.4.7-1 1.2-2 1.6-3.1H16ZM7 8.2c1.2-.2 2.4-.2 3.6 0 1.2.2 2.3.6 3.4 1.2-1 .8-2.2 1.3-3.4 1.6-1.2.3-2.4.3-3.6 0-1.2-.3-2.4-.8-3.4-1.6 1.1-.6 2.2-1 3.4-1.2Zm-2.1 3.4c1 .9 2.2 1.5 3.5 1.8v5.1c-1.2-.4-2.2-1-3-1.9-.9-.9-1.5-2-1.8-3.2.5-.6 1-1.1 1.3-1.8Zm10.2 1.8c-.3 1.2-.9 2.3-1.8 3.2-.8.9-1.8 1.5-3 1.9v-5.1c1.3-.3 2.5-.9 3.5-1.8.3.7.8 1.2 1.3 1.8ZM12 14.8c1.2-.4 2.2-1 3-1.9.5 1.4.5 2.9 0 4.3-.8.4-1.7.6-2.6.7-.9.1-1.8.1-2.7 0-.9-.1-1.8-.3-2.6-.7-.5-1.4-.5-2.9 0-4.3.8.9 1.8 1.5 3 1.9Z"/>';
+      }
+      const text = document.createElement("span");
+      text.textContent = pf
+        ? `${p.label}: ${pf.fileName || pf.file.split("/").pop()}${pf.fileSize ? ` (${pf.fileSize})` : ""}`
+        : `${p.label}: 미등록`;
+      row.append(icon, text);
+      box.append(row);
+    });
+  }
+
+  function buildUtilityPayload(base, { name, description, updatedAt, windows, android }) {
+    const out = {
+      id: base.id,
+      name,
+      description,
+      updatedAt,
+    };
+    if (windows) out.windows = windows;
+    if (android) out.android = android;
+    return out;
+  }
 
   function setView(mode) {
     const showPanel = mode === "panel";
@@ -485,29 +563,38 @@
     }
   }
 
+  function currentPlatformFileLabel(item) {
+    const pf = getPlatformFile(item, getSelectedPlatform());
+    const fname = pf?.fileName || pf?.file?.split("/").pop() || "";
+    const platform = getPlatformMeta(getSelectedPlatform())?.label || "";
+    return fname
+      ? `${platform} 현재: ${fname} — 클릭하여 교체`
+      : `${platform}용 파일 선택`;
+  }
+
   function updateEditorUI() {
     const item = getItem();
+    const platformLabel = getPlatformMeta(getSelectedPlatform())?.label || "플랫폼";
     if (item) {
       els.editorBadge.textContent = `수정 · ${item.name}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
       els.fileRequired.hidden = true;
       els.file.required = false;
-      const fname = item.fileName || item.file?.split("/").pop() || "";
-      els.fileDisplay.textContent = fname
-        ? `현재: ${fname} — 클릭하여 교체`
-        : "파일 선택";
+      els.fileDisplay.textContent = currentPlatformFileLabel(item);
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
       els.deleteBtn.hidden = true;
       els.fileRequired.hidden = false;
       els.file.required = !useManualFile();
-      els.fileDisplay.textContent = "파일 선택";
+      els.fileDisplay.textContent = `${platformLabel}용 파일 선택`;
     }
     if (els.fileManual) els.fileManual.checked = false;
     if (els.filePath) els.filePath.value = "";
     toggleManualFileUI();
+    syncFileAccept();
+    updatePlatformStatus();
     refreshUpdatedAtField();
   }
 
@@ -523,7 +610,8 @@
       btn.className = "admin-list__item";
       if (item.id === selectedId) btn.classList.add("admin-list__item--on");
 
-      btn.innerHTML = `<span class="admin-list__name">${escapeHtml(item.name)}</span><span class="admin-list__meta">${formatDate(item.updatedAt)}${item.fileSize ? " · " + escapeHtml(item.fileSize) : ""}</span>`;
+      const migrated = migrateUtility(item);
+      btn.innerHTML = `<span class="admin-list__name">${escapeHtml(item.name)}</span><span class="admin-list__meta">${formatDate(item.updatedAt)}</span><span class="admin-list__platforms">${platformBadgesHtml(migrated)}</span>`;
       btn.addEventListener("click", () => pickItem(item.id));
       li.append(btn);
       els.itemList.append(li);
@@ -584,18 +672,25 @@
     }
     const item = getItem();
     if (item) {
-      const fname = item.fileName || item.file?.split("/").pop() || "";
-      els.fileDisplay.textContent = fname
-        ? `현재: ${fname} — 클릭하여 교체`
-        : "파일 선택";
+      els.fileDisplay.textContent = currentPlatformFileLabel(item);
     } else {
-      els.fileDisplay.textContent = "파일 선택";
+      const platformLabel = getPlatformMeta(getSelectedPlatform())?.label || "플랫폼";
+      els.fileDisplay.textContent = `${platformLabel}용 파일 선택`;
     }
+  }
+
+  function onPlatformChange() {
+    syncFileAccept();
+    els.file.value = "";
+    updateEditorUI();
   }
 
   async function load() {
     const { json } = await readJson();
-    catalogData = json;
+    catalogData = {
+      ...json,
+      utilities: (json.utilities || []).map(migrateUtility),
+    };
     renderList();
   }
 
@@ -717,37 +812,50 @@
       progress.set(5);
       const { json } = await readJson();
       progress.set(12);
-      const list = [...(json.utilities || [])];
+      const list = [...(json.utilities || []).map(migrateUtility)];
       const updatedAt = nowISO();
       let nextId = selectedId;
 
+      const platformId = getSelectedPlatform();
+      const platformLabel = getPlatformMeta(platformId)?.label || platformId;
+
       if (isEdit()) {
-        const cur = getItem();
-        let filePath = cur.file;
-        let fileName = cur.fileName || "";
-        let fileSize = cur.fileSize || "";
-        if (file) {
-          const up = await uploadFile(file, (inner) => {
-            progress.set(mapSegment(12, 72, inner));
-          });
-          filePath = up.path;
-          fileName = up.fileName;
-          fileSize = up.fileSize;
+        const cur = migrateUtility(getItem());
+        let windows = getPlatformFile(cur, "windows");
+        let android = getPlatformFile(cur, "android");
+
+        if (file || manual) {
+          const up = manual
+            ? await (async () => {
+                progress.set(35);
+                const verified = await verifyDownloadFile(manualPath);
+                progress.set(70);
+                return verified;
+              })()
+            : await uploadFile(file, (inner) => {
+                progress.set(mapSegment(12, 72, inner));
+              });
+          const platformData = {
+            file: up.path,
+            fileName: up.fileName,
+            fileSize: up.fileSize,
+          };
+          if (platformId === "windows") windows = platformData;
+          else android = platformData;
         } else {
           progress.set(40);
         }
+
         const i = list.findIndex((u) => u.id === cur.id);
-        list[i] = {
-          ...cur,
+        list[i] = buildUtilityPayload(cur, {
           name,
           description: desc,
           updatedAt,
-          file: filePath,
-          fileName,
-          fileSize,
-        };
+          windows,
+          android,
+        });
         nextId = cur.id;
-        toast(`「${name}」 저장됨 · 1~2분 후 사이트 반영`);
+        toast(`「${name}」 저장됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       } else if (manual) {
         progress.set(35);
         const up = await verifyDownloadFile(manualPath);
@@ -760,17 +868,25 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
-        list.unshift({
-          id,
-          name,
-          description: desc,
-          updatedAt,
+        const platformData = {
           file: up.path,
           fileName: up.fileName,
           fileSize: up.fileSize,
-        });
+        };
+        list.unshift(
+          buildUtilityPayload(
+            { id },
+            {
+              name,
+              description: desc,
+              updatedAt,
+              windows: platformId === "windows" ? platformData : null,
+              android: platformId === "android" ? platformData : null,
+            }
+          )
+        );
         nextId = id;
-        toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
+        toast(`「${name}」 등록됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       } else {
         const up = await uploadFile(file, (inner) => {
           progress.set(mapSegment(12, 72, inner));
@@ -783,17 +899,25 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
-        list.unshift({
-          id,
-          name,
-          description: desc,
-          updatedAt,
+        const platformData = {
           file: up.path,
           fileName: up.fileName,
           fileSize: up.fileSize,
-        });
+        };
+        list.unshift(
+          buildUtilityPayload(
+            { id },
+            {
+              name,
+              description: desc,
+              updatedAt,
+              windows: platformId === "windows" ? platformData : null,
+              android: platformId === "android" ? platformData : null,
+            }
+          )
+        );
         nextId = id;
-        toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
+        toast(`「${name}」 등록됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       }
 
       progress.set(78);
@@ -858,6 +982,9 @@
   els.deleteBtn.addEventListener("click", onDelete);
   els.file.addEventListener("change", onFilePick);
   els.fileManual?.addEventListener("change", toggleManualFileUI);
+  document.querySelectorAll('input[name="admin-platform"]').forEach((radio) => {
+    radio.addEventListener("change", onPlatformChange);
+  });
 
   async function init() {
     applyRememberPreferences();

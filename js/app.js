@@ -3,6 +3,8 @@
  */
 
 const DATA_URL = "data/data.json";
+const { list: PLATFORMS, migrateUtility, getPlatformFile, isValidUtility, createPlatformIcon } =
+  window.HYOT_PLATFORMS;
 
 const els = {
   siteTitle: document.getElementById("site-title"),
@@ -31,17 +33,6 @@ function formatDate(isoDate) {
   }).format(date);
 }
 
-function isValidUtility(item) {
-  return (
-    item &&
-    typeof item.id === "string" &&
-    typeof item.name === "string" &&
-    typeof item.description === "string" &&
-    typeof item.updatedAt === "string" &&
-    typeof item.file === "string"
-  );
-}
-
 function sortByUpdatedAt(items) {
   return [...items].sort((a, b) => {
     const ta = new Date(a.updatedAt).getTime() || 0;
@@ -51,7 +42,8 @@ function sortByUpdatedAt(items) {
 }
 
 function normalizeUtilities(raw = []) {
-  const valid = raw.filter(isValidUtility);
+  const migrated = raw.map(migrateUtility);
+  const valid = migrated.filter(isValidUtility);
   const skipped = raw.length - valid.length;
   if (skipped > 0) {
     console.warn(`[HyoT] ${skipped}개 항목이 필수 필드 누락으로 제외되었습니다.`);
@@ -59,31 +51,51 @@ function normalizeUtilities(raw = []) {
   return sortByUpdatedAt(valid);
 }
 
-function createDownloadIcon() {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "btn-download__icon");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("fill", "none");
-  svg.setAttribute("stroke", "currentColor");
-  svg.setAttribute("stroke-width", "2");
-  svg.setAttribute("aria-hidden", "true");
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute(
-    "d",
-    "M12 3v12m0 0l4-4m-4 4L8 11M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"
-  );
-  path.setAttribute("stroke-linecap", "round");
-  path.setAttribute("stroke-linejoin", "round");
-  svg.appendChild(path);
-  return svg;
-}
-
 function buildMetaText(item) {
   const parts = [`업데이트 · ${formatDate(item.updatedAt)}`];
   if (item.version) parts.push(`v${item.version}`);
-  if (item.fileSize) parts.push(item.fileSize);
+  const sizes = PLATFORMS.map((p) => {
+    const pf = getPlatformFile(item, p.id);
+    return pf?.fileSize ? `${p.shortLabel} ${pf.fileSize}` : "";
+  }).filter(Boolean);
+  if (sizes.length) parts.push(sizes.join(" · "));
   return parts.join(" · ");
+}
+
+function createPlatformButton(item, platform) {
+  const pf = getPlatformFile(item, platform.id);
+  const label = document.createElement("span");
+  label.className = "btn-platform__label";
+  label.textContent = platform.label;
+
+  const size = document.createElement("span");
+  size.className = "btn-platform__size";
+  size.textContent = pf?.fileSize || "";
+
+  const inner = document.createDocumentFragment();
+  inner.append(createPlatformIcon(platform.id), label);
+  if (pf?.fileSize) inner.append(size);
+
+  if (pf) {
+    const link = document.createElement("a");
+    link.className = `btn-download btn-platform btn-platform--${platform.id}`;
+    link.href = pf.file;
+    if (pf.fileName) link.download = pf.fileName;
+    link.setAttribute("aria-label", `${item.name} — ${platform.label} 다운로드`);
+    link.append(inner);
+    return link;
+  }
+
+  const span = document.createElement("span");
+  span.className = `btn-platform btn-platform--${platform.id} btn-platform--missing`;
+  span.setAttribute("aria-disabled", "true");
+  span.title = `${platform.label}용 파일이 아직 등록되지 않았습니다.`;
+  span.append(inner);
+  const missing = document.createElement("span");
+  missing.className = "btn-platform__missing";
+  missing.textContent = "준비 중";
+  span.append(missing);
+  return span;
 }
 
 function createCard(item) {
@@ -108,14 +120,15 @@ function createCard(item) {
 
   header.append(name, desc, meta);
 
-  const link = document.createElement("a");
-  link.className = "btn-download";
-  link.href = item.file;
-  if (item.fileName) link.download = item.fileName;
-  link.setAttribute("aria-label", `${item.name} 다운로드`);
-  link.append(createDownloadIcon(), document.createTextNode("다운로드"));
+  const downloads = document.createElement("div");
+  downloads.className = "utility-card__downloads";
+  downloads.setAttribute("role", "group");
+  downloads.setAttribute("aria-label", "플랫폼별 다운로드");
+  PLATFORMS.forEach((platform) => {
+    downloads.appendChild(createPlatformButton(item, platform));
+  });
 
-  li.append(header, link);
+  li.append(header, downloads);
   return li;
 }
 

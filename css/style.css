@@ -313,6 +313,67 @@ a {
   opacity: 0.95;
 }
 
+.utility-card__downloads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: auto;
+}
+
+.btn-platform {
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: 0.62rem 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.btn-platform__icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+}
+
+.btn-platform__label {
+  font-weight: 600;
+}
+
+.btn-platform__size {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.btn-platform--windows:not(.btn-platform--missing) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 55%, #7c3aed 130%);
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn-platform--android:not(.btn-platform--missing) {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 55%, #0d9488 120%);
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn-platform--missing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: rgba(10, 12, 22, 0.55);
+  border: 1px dashed var(--border-glass);
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.btn-platform__missing {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+
 /* ── Empty state ─────────────────────────────────────────── */
 .empty-state {
   text-align: center;
@@ -689,6 +750,136 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+}
+
+.admin-platform-pick {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-platform-pick__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.admin-platform-option {
+  cursor: pointer;
+}
+
+.admin-platform-option__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-platform-option__face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(10, 12, 22, 0.45);
+  border: 1px solid var(--border-glass);
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    color var(--transition);
+}
+
+.admin-platform-option__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.9;
+}
+
+.admin-platform-option__input:checked + .admin-platform-option__face {
+  color: var(--text-primary);
+  border-color: var(--accent-purple);
+  background: var(--accent-purple-dim);
+  box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.25);
+}
+
+.admin-platform-option__input:focus-visible + .admin-platform-option__face {
+  outline: 2px solid var(--accent-purple-bright);
+  outline-offset: 2px;
+}
+
+.admin-platform-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: rgba(10, 12, 22, 0.4);
+  border: 1px solid var(--border-glass);
+}
+
+.admin-platform-status__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-platform-status__row--empty {
+  color: var(--text-muted);
+}
+
+.admin-platform-status__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.admin-list__platforms {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.admin-platform-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.65rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  background: rgba(10, 12, 22, 0.5);
+  border: 1px solid var(--border-glass);
+}
+
+.admin-platform-badge--on {
+  color: var(--text-primary);
+  border-color: var(--border-glow);
+}
+
+.admin-platform-badge--windows.admin-platform-badge--on {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.admin-platform-badge--android.admin-platform-badge--on {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
 }
 
 .admin-editor__badge {
