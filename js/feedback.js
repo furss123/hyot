@@ -20,7 +20,6 @@
     utility: document.getElementById("feedback-utility"),
     category: document.getElementById("feedback-category"),
     body: document.getElementById("feedback-body"),
-    author: document.getElementById("feedback-author"),
     submit: document.getElementById("feedback-submit"),
     screenshot: document.getElementById("feedback-screenshot"),
     screenshotPreview: document.getElementById("feedback-screenshot-preview"),
@@ -260,7 +259,7 @@
     }
 
     const body = els.body.value.trim();
-    const author = els.author.value.trim() || "익명";
+    const author = "익명";
     const category = els.category.value;
     const categoryLabel = categoryMap[category] || category;
     const title = `[${categoryLabel}] ${target.utilityLabel}`;
@@ -274,11 +273,6 @@
       setStatus(`내용은 ${cfg.limits.bodyMax}자 이하로 입력해 주세요.`, true);
       return null;
     }
-    if (author.length > cfg.limits.authorMax) {
-      setStatus(`이름은 ${cfg.limits.authorMax}자 이하로 입력해 주세요.`, true);
-      return null;
-    }
-
     const post = {
       id: `fb-${Date.now()}`,
       category,
