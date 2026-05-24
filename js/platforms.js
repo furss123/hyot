@@ -58,6 +58,60 @@
     );
   }
 
+  function fileKindFromPath(path = "") {
+    const name = String(path).split("/").pop() || "";
+    const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+    if (ext === "exe" || ext === "msi") return "exe";
+    if (ext === "zip" || ext === "7z") return "archive";
+    if (ext === "apk" || ext === "aab") return "apk";
+    if (ext === "txt" || ext === "md") return "text";
+    return "file";
+  }
+
+  function getFileKindFromPlatformFile(pf) {
+    if (!pf) return "file";
+    const name = pf.fileName || pf.file || "";
+    return fileKindFromPath(name);
+  }
+
+  function getPrimaryPlatformFile(item) {
+    for (const p of PLATFORMS) {
+      const pf = getPlatformFile(item, p.id);
+      if (pf) return pf;
+    }
+    return null;
+  }
+
+  function getCardFileKind(item) {
+    if (hasExternalLink(item)) return "link";
+    return getFileKindFromPlatformFile(getPrimaryPlatformFile(item));
+  }
+
+  function createFileIcon(kind, className = "file-icon") {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", `${className} file-icon file-icon--${kind}`);
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+
+    const paths = {
+      exe:
+        '<path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2 5 5h-5V4ZM8 12h8v1.5H8V12Zm0 3.5h5.5V17H8v-1.5Z"/>',
+      archive:
+        '<path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2 5 5h-5V4ZM8 10h2v2H8v-2Zm4 0h2v2h-2v-2Zm-4 4h2v2H8v-2Zm4 0h2v2h-2v-2Z"/>',
+      apk:
+        '<path fill="currentColor" d="M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-5 3.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm-4.2 9.8 1.4-2.4h5.6l1.4 2.4H7.8ZM7 19v-2h2v2H7Zm8 0v-2h2v2h-2Z"/>',
+      text:
+        '<path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2 5 5h-5V4ZM8 11h8v1.5H8V11Zm0 3h8v1.5H8V14Z"/>',
+      link:
+        '<path fill="currentColor" d="M10.6 13.4a1 1 0 0 1 0-1.4l2.5-2.5a3.5 3.5 0 1 1 5 5l-1.3 1.3a1 1 0 1 1-1.4-1.4l1.3-1.3a1.5 1.5 0 1 0-2.1-2.1l-2.5 2.5a1 1 0 0 1-1.4 0ZM13.4 10.6a1 1 0 0 1 0 1.4l-2.5 2.5a3.5 3.5 0 1 1-5-5l1.3-1.3a1 1 0 0 1 1.4 1.4l-1.3 1.3a1.5 1.5 0 0 0 2.1 2.1l2.5-2.5a1 1 0 0 1 1.4 0Z"/>',
+      file:
+        '<path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 2 5 5h-5V4Z"/>',
+    };
+
+    svg.innerHTML = paths[kind] || paths.file;
+    return svg;
+  }
+
   function createPlatformIcon(platformId) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "btn-platform__icon");
@@ -83,5 +137,8 @@
     hasExternalLink,
     isValidUtility,
     createPlatformIcon,
+    createFileIcon,
+    getCardFileKind,
+    getFileKindFromPlatformFile,
   };
 })();

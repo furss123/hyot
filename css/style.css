@@ -234,10 +234,50 @@ a {
 }
 
 .utility-card__name {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
   font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-primary);
+}
+
+.utility-card__name-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.utility-card__file-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  margin-top: 0.12rem;
+}
+
+.file-icon--exe {
+  color: #60a5fa;
+}
+
+.file-icon--archive {
+  color: #fbbf24;
+}
+
+.file-icon--apk {
+  color: #4ade80;
+}
+
+.file-icon--text {
+  color: #94a3b8;
+}
+
+.file-icon--link {
+  color: #c084fc;
+}
+
+.file-icon--file {
+  color: #a78bfa;
 }
 
 .utility-card__desc {
@@ -332,6 +372,13 @@ a {
   padding: 0.62rem 0.5rem;
   font-size: 0.82rem;
   line-height: 1.2;
+}
+
+.btn-platform__file-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  opacity: 0.95;
 }
 
 .btn-platform__icon {

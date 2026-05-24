@@ -10,6 +10,9 @@ const {
   hasExternalLink,
   isValidUtility,
   createPlatformIcon,
+  createFileIcon,
+  getCardFileKind,
+  getFileKindFromPlatformFile,
 } = window.HYOT_PLATFORMS;
 
 const els = {
@@ -72,7 +75,10 @@ function createLinkButton(item) {
   const link = document.createElement("a");
   link.className = "btn-download btn-download--link";
   link.href = item.link;
-  link.textContent = item.linkLabel || "바로가기";
+  link.append(
+    createFileIcon("link", "btn-download__icon"),
+    document.createTextNode(item.linkLabel || "바로가기")
+  );
   if (item.link.startsWith("http")) {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
@@ -92,7 +98,11 @@ function createPlatformButton(item, platform) {
   size.textContent = pf?.fileSize || "";
 
   const inner = document.createDocumentFragment();
-  inner.append(createPlatformIcon(platform.id), label);
+  inner.append(
+    createFileIcon(getFileKindFromPlatformFile(pf), "btn-platform__file-icon"),
+    createPlatformIcon(platform.id),
+    label
+  );
   if (pf?.fileSize) inner.append(size);
 
   if (pf) {
@@ -127,7 +137,12 @@ function createCard(item) {
 
   const name = document.createElement("h3");
   name.className = "utility-card__name";
-  name.textContent = item.name;
+
+  const nameText = document.createElement("span");
+  nameText.className = "utility-card__name-text";
+  nameText.textContent = item.name;
+
+  name.append(createFileIcon(getCardFileKind(item), "utility-card__file-icon"), nameText);
 
   const desc = document.createElement("p");
   desc.className = "utility-card__desc";
