@@ -13,6 +13,8 @@ hyot/
 ├── 404.html                # GitHub Pages용 404
 ├── css/style.css           # 스타일
 ├── js/app.js               # 목록 렌더링·검색
+├── js/admin.js             # 관리자 패널 (GitHub API)
+├── js/admin-config.js      # 관리자 비밀번호·저장소 설정
 ├── data/data.json          # 프로그램 메타데이터 (관리자 편집)
 ├── downloads/              # 배포 파일 (.zip, .exe 등)
 ├── assets/favicon.svg
@@ -20,7 +22,20 @@ hyot/
 └── .nojekyll
 ```
 
-## 관리자: 새 유틸리티 추가
+## 관리자 패널 (웹에서 업로드)
+
+사이트 우측 상단 **관리자** 버튼 → 로그인 후 이름·설명·파일을 등록합니다.  
+`업데이트` 날짜는 **저장할 때마다 오늘 날짜로 자동** 입력됩니다.
+
+### 최초 설정
+
+1. **`js/admin-config.js`** 에서 `adminPasswordSha256` 을 본인 비밀번호 해시로 변경 (기본 비밀번호: `hyot-admin`)
+2. [GitHub 토큰 발급](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) — classic, **`repo`** 권한
+3. 관리자 로그인 → 새 등록 / 수정 / 삭제
+
+토큰은 브라우저 `sessionStorage`에만 저장되며, 저장소에 커밋되지 않습니다.
+
+### 수동 추가 (JSON 직접 편집)
 
 1. 실행 파일을 `downloads/` 폴더에 넣습니다.
 2. `data/data.json`의 `utilities` 배열에 항목을 추가합니다.

@@ -214,3 +214,4 @@ async function init() {
 }
 
 init();
+window.HyotApp = { refresh: init };

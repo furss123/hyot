@@ -26,6 +26,9 @@
           <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
         </div>
       </div>
+      <button type="button" class="admin-btn" id="admin-open-btn" aria-haspopup="dialog">
+        관리자
+      </button>
     </div>
   </header>
 
@@ -65,12 +68,92 @@
     </div>
   </main>
 
+  <div id="admin-modal" class="admin-modal" hidden role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+    <div class="admin-modal__backdrop" data-admin-close></div>
+    <div class="admin-modal__panel">
+      <header class="admin-modal__header">
+        <h2 id="admin-modal-title" class="admin-modal__title">관리자</h2>
+        <button type="button" class="admin-modal__close" id="admin-close-btn" aria-label="닫기">&times;</button>
+      </header>
+
+      <div id="admin-login-view" class="admin-view">
+        <p class="admin-lead">저장소에 직접 반영됩니다. GitHub <strong>repo</strong> 권한 토큰이 필요합니다.</p>
+        <form id="admin-login-form" class="admin-form">
+          <label class="admin-field">
+            <span class="admin-field__label">관리자 비밀번호</span>
+            <input id="admin-password" class="admin-field__input" type="password" autocomplete="current-password" required>
+          </label>
+          <label class="admin-field">
+            <span class="admin-field__label">GitHub Personal Access Token</span>
+            <input id="admin-token" class="admin-field__input" type="password" autocomplete="off" placeholder="ghp_..." required>
+          </label>
+          <p class="admin-hint">
+            <a href="https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin" target="_blank" rel="noopener noreferrer">토큰 발급</a>
+            (classic · <code>repo</code> 권한)
+          </p>
+          <p id="admin-login-error" class="admin-error" role="alert"></p>
+          <button type="submit" class="btn-download admin-form__submit">로그인</button>
+        </form>
+      </div>
+
+      <div id="admin-panel-view" class="admin-view" hidden>
+        <div class="admin-toolbar">
+          <span id="admin-user-label" class="admin-user"></span>
+          <button type="button" class="admin-link-btn" id="admin-logout-btn">로그아웃</button>
+        </div>
+
+        <div class="admin-mode-tabs">
+          <button type="button" class="admin-mode admin-mode--active" id="admin-mode-new">새 등록</button>
+          <button type="button" class="admin-mode" id="admin-mode-edit">수정</button>
+        </div>
+
+        <form id="admin-utility-form" class="admin-form">
+          <div id="admin-edit-select-wrap" class="admin-field" hidden>
+            <span class="admin-field__label">항목 선택</span>
+            <select id="admin-edit-select" class="admin-field__input admin-field__select"></select>
+          </div>
+
+          <label class="admin-field">
+            <span class="admin-field__label">프로그램 이름</span>
+            <input id="admin-name" class="admin-field__input" type="text" required maxlength="80">
+          </label>
+
+          <label class="admin-field">
+            <span class="admin-field__label">설명</span>
+            <textarea id="admin-description" class="admin-field__input admin-field__textarea" rows="3" required maxlength="200"></textarea>
+          </label>
+
+          <label class="admin-field">
+            <span class="admin-field__label">파일 업로드 <span id="admin-file-required" class="admin-required">*</span></span>
+            <input id="admin-file" class="admin-field__file" type="file">
+            <span id="admin-file-hint" class="admin-hint">ZIP, EXE 등 배포 파일을 선택하세요.</span>
+          </label>
+
+          <label class="admin-field">
+            <span class="admin-field__label">업데이트 날짜</span>
+            <input id="admin-updated-at" class="admin-field__input admin-field__readonly" type="text" readonly>
+            <span class="admin-hint">저장 시 업로드한 날짜(오늘)로 자동 설정됩니다.</span>
+          </label>
+
+          <p id="admin-panel-status" class="admin-status" role="status"></p>
+
+          <div class="admin-actions">
+            <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
+            <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="container">
       <p class="site-footer__copy">&copy; <span id="footer-year"></span> HyoT의 자료실</p>
     </div>
   </footer>
 
+  <script src="js/admin-config.js"></script>
   <script src="js/app.js" defer></script>
+  <script src="js/admin.js" defer></script>
 </body>
 </html>
