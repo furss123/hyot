@@ -499,6 +499,23 @@ a {
   cursor: pointer;
 }
 
+.admin-check--block {
+  margin-top: 0.65rem;
+}
+
+.admin-file-manual-wrap {
+  margin-top: 0.55rem;
+}
+
+.admin-field--nested {
+  margin-top: 0.35rem;
+}
+
+.admin-field--nested code {
+  font-size: 0.8em;
+  color: var(--accent-purple-bright);
+}
+
 .admin-login-form.is-busy {
   opacity: 0.65;
   pointer-events: none;

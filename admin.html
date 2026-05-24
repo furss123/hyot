@@ -105,7 +105,18 @@
                   <input id="admin-file" class="admin-file-btn__input" type="file">
                   <span id="admin-file-display">파일 선택</span>
                 </label>
-                <p class="admin-hint">최대 100MB까지 등록 가능합니다. 25MB를 넘는 파일은 Git API로 안정 업로드됩니다.</p>
+                <p class="admin-hint">브라우저 업로드는 최대 25MB까지 가능합니다.</p>
+                <label class="admin-check admin-check--block">
+                  <input type="checkbox" id="admin-file-manual">
+                  <span>저장소에 파일을 직접 올렸음 (25MB 초과)</span>
+                </label>
+                <div id="admin-file-manual-wrap" class="admin-file-manual-wrap" hidden>
+                  <label class="admin-field admin-field--nested">
+                    <span class="admin-field__label">파일 경로</span>
+                    <input id="admin-file-path" class="admin-field__input" type="text" placeholder="downloads/파일명.exe" autocomplete="off">
+                    <p class="admin-hint">먼저 GitHub 저장소의 <code>downloads/</code> 폴더에 파일을 push한 뒤, 그 경로를 입력하세요.</p>
+                  </label>
+                </div>
               </div>
             </div>
 

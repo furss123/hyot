@@ -15,9 +15,8 @@
   const cfg = window.HYOT_ADMIN_CONFIG;
   const secrets = window.HYOT_ADMIN_SECRETS;
 
-  const MAX_CONTENTS_BYTES = 25 * 1024 * 1024;
-  /** GitHub Git Blob API 단일 파일 상한 */
-  const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+  /** 브라우저에서 GitHub API로 안정 업로드 가능한 최대 크기 */
+  const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
   if (!cfg) return;
 
@@ -44,6 +43,9 @@
     description: $("admin-description"),
     updatedAt: $("admin-updated-at"),
     file: $("admin-file"),
+    fileManual: $("admin-file-manual"),
+    fileManualWrap: $("admin-file-manual-wrap"),
+    filePath: $("admin-file-path"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
   };
@@ -333,7 +335,10 @@
       } catch {
         /* ignore */
       }
-      if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
+      if (/too large/i.test(msg)) {
+        msg =
+          "파일이 너무 커서 브라우저 업로드가 불가합니다. 「저장소에 파일을 직접 올렸음」을 체크하고 경로로 등록하세요.";
+      } else if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
         msg =
           "GitHub 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하거나 파일 크기를 줄여 다시 업로드하세요.";
       }
@@ -380,73 +385,28 @@
     return `/repos/${cfg.github.owner}/${cfg.github.repo}`;
   }
 
-  async function fileToBase64(file, onRatio) {
-    const buffer = await new Promise((ok, no) => {
-      const reader = new FileReader();
-      reader.onprogress = (e) => {
-        if (e.lengthComputable && onRatio) onRatio(e.loaded / e.total);
-      };
-      reader.onload = () => ok(reader.result);
-      reader.onerror = () => no(reader.error);
-      reader.readAsArrayBuffer(file);
-    });
-    return uint8ToBase64(new Uint8Array(buffer));
+  function normalizeDownloadPath(input) {
+    let path = String(input || "").trim().replace(/^\/+/, "");
+    if (!path) return "";
+    if (!path.startsWith(`${cfg.downloadsPath}/`)) {
+      path = path.replace(/^downloads\/?/i, "");
+      path = `${cfg.downloadsPath}/${path}`;
+    }
+    return path;
   }
 
-  async function uploadFileGit(file, onSegmentProgress) {
-    const report = (inner) => onSegmentProgress?.(inner);
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
-    const path = `${cfg.downloadsPath}/${safe}`;
-    const branch = cfg.github.branch;
-
-    report(2);
-    const b64 = await fileToBase64(file, (ratio) => report(2 + ratio * 38));
-    report(42);
-
-    const blob = await api(`${repoPath()}/git/blobs`, {
-      method: "POST",
-      body: JSON.stringify({ content: b64, encoding: "base64" }),
-    });
-    report(52);
-
-    const ref = await api(
-      `${repoPath()}/git/ref/heads/${encodeURIComponent(branch)}`
+  async function verifyDownloadFile(path) {
+    const ref = encodeURIComponent(cfg.github.branch);
+    const data = await api(
+      `${repoPath()}/contents/${path}?ref=${ref}`
     );
-    const parentSha = ref.object.sha;
-    report(58);
-
-    const parent = await api(`${repoPath()}/git/commits/${parentSha}`);
-    report(64);
-
-    const tree = await api(`${repoPath()}/git/trees`, {
-      method: "POST",
-      body: JSON.stringify({
-        base_tree: parent.tree.sha,
-        tree: [{ path, mode: "100644", type: "blob", sha: blob.sha }],
-      }),
-    });
-    report(76);
-
-    const commit = await api(`${repoPath()}/git/commits`, {
-      method: "POST",
-      body: JSON.stringify({
-        message: `upload: ${safe}`,
-        tree: tree.sha,
-        parents: [parentSha],
-      }),
-    });
-    report(88);
-
-    await api(`${repoPath()}/git/refs/heads/${encodeURIComponent(branch)}`, {
-      method: "PATCH",
-      body: JSON.stringify({ sha: commit.sha }),
-    });
-    report(100);
-
+    if (data.type && data.type !== "file") {
+      throw new Error("파일 경로가 올바르지 않습니다. downloads/ 아래 파일을 지정하세요.");
+    }
     return {
       path,
-      fileName: file.name,
-      fileSize: formatSize(file.size),
+      fileName: path.split("/").pop() || path,
+      fileSize: typeof data.size === "number" ? formatSize(data.size) : "",
     };
   }
 
@@ -505,10 +465,24 @@
   }
 
   async function uploadFile(file, onSegmentProgress) {
-    if (file.size > MAX_CONTENTS_BYTES) {
-      return uploadFileGit(file, onSegmentProgress);
-    }
     return uploadFileContents(file, onSegmentProgress);
+  }
+
+  function useManualFile() {
+    return Boolean(els.fileManual?.checked);
+  }
+
+  function toggleManualFileUI() {
+    const manual = useManualFile();
+    if (els.fileManualWrap) els.fileManualWrap.hidden = !manual;
+    if (els.filePath) els.filePath.required = manual && !isEdit();
+    if (els.file) els.file.required = !manual && !isEdit();
+    if (manual) {
+      els.file.value = "";
+      els.fileDisplay.textContent = "직접 등록 모드 — 파일 선택 안 함";
+    } else if (!isEdit()) {
+      els.fileDisplay.textContent = "파일 선택";
+    }
   }
 
   function updateEditorUI() {
@@ -528,9 +502,12 @@
       els.editorBadge.classList.remove("admin-editor__badge--edit");
       els.deleteBtn.hidden = true;
       els.fileRequired.hidden = false;
-      els.file.required = true;
+      els.file.required = !useManualFile();
       els.fileDisplay.textContent = "파일 선택";
     }
+    if (els.fileManual) els.fileManual.checked = false;
+    if (els.filePath) els.filePath.value = "";
+    toggleManualFileUI();
     refreshUpdatedAtField();
   }
 
@@ -586,8 +563,15 @@
   function rejectOversizedFile(file) {
     if (!file || file.size <= MAX_UPLOAD_BYTES) return false;
     els.file.value = "";
-    toast("100MB 이하 파일만 등록할 수 있습니다.", true);
-    onFilePick();
+    if (els.fileManual) els.fileManual.checked = true;
+    if (els.filePath) {
+      els.filePath.value = `${cfg.downloadsPath}/${file.name}`;
+    }
+    toggleManualFileUI();
+    toast(
+      "25MB 초과 파일은 브라우저 업로드가 불가합니다. 저장소에 직접 올린 뒤 경로로 등록하세요.",
+      true
+    );
     return true;
   }
 
@@ -705,12 +689,23 @@
       toast("이름과 설명을 입력하세요.", true);
       return;
     }
-    if (!isEdit() && !file) {
-      toast("파일을 선택하세요.", true);
+    const manual = useManualFile();
+    const manualPath = normalizeDownloadPath(els.filePath?.value);
+
+    if (!isEdit() && !file && !manual) {
+      toast("파일을 선택하거나 「저장소에 직접 올렸음」을 체크하세요.", true);
       return;
     }
-    if (file && file.size > MAX_UPLOAD_BYTES) {
-      toast("100MB 이하 파일만 등록할 수 있습니다.", true);
+    if (manual && !manualPath) {
+      toast("downloads/ 아래 파일 경로를 입력하세요.", true);
+      return;
+    }
+    if (!manual && file && file.size > MAX_UPLOAD_BYTES) {
+      toast("25MB 이하 파일만 브라우저에서 업로드할 수 있습니다.", true);
+      return;
+    }
+    if (manual && file) {
+      toast("직접 등록 모드에서는 파일 선택을 해제하세요.", true);
       return;
     }
 
@@ -753,6 +748,29 @@
         };
         nextId = cur.id;
         toast(`「${name}」 저장됨 · 1~2분 후 사이트 반영`);
+      } else if (manual) {
+        progress.set(35);
+        const up = await verifyDownloadFile(manualPath);
+        progress.set(70);
+        let id = up.fileName
+          .replace(/\.[^.]+$/, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 48) || `item-${Date.now()}`;
+        if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
+
+        list.unshift({
+          id,
+          name,
+          description: desc,
+          updatedAt,
+          file: up.path,
+          fileName: up.fileName,
+          fileSize: up.fileSize,
+        });
+        nextId = id;
+        toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
       } else {
         const up = await uploadFile(file, (inner) => {
           progress.set(mapSegment(12, 72, inner));
@@ -839,6 +857,7 @@
   els.form.addEventListener("submit", onSave);
   els.deleteBtn.addEventListener("click", onDelete);
   els.file.addEventListener("change", onFilePick);
+  els.fileManual?.addEventListener("change", toggleManualFileUI);
 
   async function init() {
     applyRememberPreferences();
