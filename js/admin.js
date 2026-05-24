@@ -74,6 +74,12 @@
     return start + (inner0to100 / 100) * (end - start);
   }
 
+  function redirectToMainAfterSave() {
+    const url = new URL("index.html", window.location.href);
+    url.searchParams.set("saved", "1");
+    window.location.replace(url.href);
+  }
+
   function beginSaveProgress() {
     const btn = els.submitBtn;
     const label = btn.querySelector(".btn-save-progress__label");
@@ -1025,7 +1031,6 @@
           icon,
         });
         nextId = cur.id;
-        toast(`「${name}」 저장됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       } else if (manual) {
         progress.set(35);
         const up = await verifyDownloadFile(manualPath);
@@ -1059,7 +1064,6 @@
           )
         );
         nextId = id;
-        toast(`「${name}」 등록됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       } else {
         const up = await uploadFile(file, (inner) => {
           progress.set(mapSegment(12, 72, inner));
@@ -1093,7 +1097,6 @@
           )
         );
         nextId = id;
-        toast(`「${name}」 등록됨 (${platformLabel}) · 1~2분 후 사이트 반영`);
       }
 
       progress.set(78);
@@ -1105,10 +1108,12 @@
       progress.set(90);
       selectedId = nextId;
 
+      const actionLabel = isEdit() ? "저장" : "등록";
+      toast(`「${name}」 ${actionLabel} 완료 (${platformLabel}). 메인 화면으로 이동합니다…`);
       progress.complete();
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 550));
       goToMain = true;
-      window.location.assign("./");
+      redirectToMainAfterSave();
     } catch (err) {
       toast(err.message, true);
     } finally {

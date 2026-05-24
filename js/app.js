@@ -309,10 +309,27 @@ function renderUtilities(utilities = []) {
   els.grid.appendChild(fragment);
 }
 
+let savedFromAdmin = false;
+
+function showSavedFromAdminHint() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("saved") !== "1") return;
+  savedFromAdmin = true;
+  setStatus("자료가 저장되었습니다. GitHub Pages 반영까지 1~2분 걸릴 수 있습니다.");
+}
+
+function clearSavedFromAdminQuery() {
+  if (!savedFromAdmin) return;
+  const clean = new URL(window.location.href);
+  clean.searchParams.delete("saved");
+  window.history.replaceState(null, "", clean.pathname + clean.search + clean.hash);
+}
+
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
   bindPlatformDownloads();
-  setStatus("자료 목록을 불러오는 중…");
+  showSavedFromAdminHint();
+  if (!savedFromAdmin) setStatus("자료 목록을 불러오는 중…");
 
   try {
     const res = await fetch(DATA_URL, { cache: "no-store" });
@@ -322,7 +339,8 @@ async function init() {
     applySiteMeta(data.site);
     allUtilities = normalizeUtilities(data.utilities);
     renderUtilities(allUtilities);
-    setStatus("");
+    if (!savedFromAdmin) setStatus("");
+    clearSavedFromAdminQuery();
   } catch (err) {
     console.error("[HyoT] data load failed:", err);
     setStatus("자료 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
