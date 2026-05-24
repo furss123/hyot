@@ -4,16 +4,5 @@
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
   },
-  "utilities": [
-    {
-      "id": "sample-pdf-merge",
-      "name": "PDF 병합기",
-      "description": "여러 PDF를 드래그 한 번으로 합치는 간단한 병합 도구입니다.",
-      "updatedAt": "2026-05-20",
-      "version": "0.1.0",
-      "fileSize": "1 KB",
-      "file": "downloads/sample-pdf-merge.zip",
-      "fileName": "hyot-pdf-merge.zip"
-    }
-  ]
+  "utilities": []
 }
