@@ -1,9 +1,4 @@
-/**
- * 관리자 설정 — 배포 전 adminPasswordSha256 값을 반드시 변경하세요.
- * 비밀번호 해시 생성 (브라우저 콘솔):
- *   crypto.subtle.digest('SHA-256', new TextEncoder().encode('새비밀번호'))
- *     .then(b => Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''))
- */
+/** 관리자 설정 (비밀번호는 SHA-256 해시로만 저장) */
 window.HYOT_ADMIN_CONFIG = {
   github: {
     owner: "furss123",
@@ -12,7 +7,7 @@ window.HYOT_ADMIN_CONFIG = {
   },
   dataPath: "data/data.json",
   downloadsPath: "downloads",
-  /** 기본 비밀번호: hyot-admin (배포 전 변경 권장) */
+  adminId: "furss123",
   adminPasswordSha256:
-    "c7e79a65ccc18144f4a7253275e2d519376bf9ba3e18e5690a8b2978686fd841",
+    "332ab84a8d170de9233a4e76faf02a728026ef3da5b521a2f4945c1eb19ad5d0",
 };

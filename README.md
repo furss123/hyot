@@ -29,9 +29,11 @@ hyot/
 
 ### 최초 설정
 
-1. **`js/admin-config.js`** 에서 `adminPasswordSha256` 을 본인 비밀번호 해시로 변경 (기본 비밀번호: `hyot-admin`)
-2. [GitHub 토큰 발급](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) — classic, **`repo`** 권한
-3. 관리자 로그인 → 새 등록 / 수정 / 삭제
+1. 사이트 **관리자** → 아이디·비밀번호 입력
+2. [GitHub 토큰 발급](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) — classic, **`repo`** 권한 (파일 업로드용)
+3. 새 등록 / 수정 / 삭제
+
+비밀번호 변경 시 `js/admin-config.js`의 `adminPasswordSha256` 값을 갱신합니다.
 
 토큰은 브라우저 `sessionStorage`에만 저장되며, 저장소에 커밋되지 않습니다.
 

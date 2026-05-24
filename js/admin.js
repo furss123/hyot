@@ -21,6 +21,7 @@
     loginView: document.getElementById("admin-login-view"),
     panelView: document.getElementById("admin-panel-view"),
     loginForm: document.getElementById("admin-login-form"),
+    adminId: document.getElementById("admin-id"),
     password: document.getElementById("admin-password"),
     token: document.getElementById("admin-token"),
     loginError: document.getElementById("admin-login-error"),
@@ -280,29 +281,36 @@
     e.preventDefault();
     setLoginError("");
 
+    const adminId = els.adminId.value.trim();
     const password = els.password.value;
     const token = els.token.value.trim();
 
-    if (!password || !token) {
-      setLoginError("비밀번호와 GitHub 토큰을 모두 입력하세요.");
+    if (!adminId || !password || !token) {
+      setLoginError("아이디, 비밀번호, GitHub 토큰을 모두 입력하세요.");
       return;
     }
 
     try {
+      if (adminId !== cfg.adminId) {
+        setLoginError("아이디가 올바르지 않습니다.");
+        return;
+      }
+
       const hash = await sha256Hex(password);
       if (hash !== cfg.adminPasswordSha256) {
-        setLoginError("관리자 비밀번호가 올바르지 않습니다.");
+        setLoginError("비밀번호가 올바르지 않습니다.");
         return;
       }
 
       sessionStorage.setItem(STORAGE_TOKEN, token);
       const user = await verifyToken();
-      sessionStorage.setItem(STORAGE_USER, user.login || user.name || "admin");
+      sessionStorage.setItem(STORAGE_USER, cfg.adminId);
 
+      els.adminId.value = "";
       els.password.value = "";
       els.token.value = "";
       showView(true);
-      els.userLabel.textContent = `${user.login} 님`;
+      els.userLabel.textContent = `${cfg.adminId} 님`;
       await loadCatalog();
       populateEditSelect();
       setMode(false);
