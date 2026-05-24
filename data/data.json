@@ -4,15 +4,5 @@
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
   },
-  "utilities": [
-    {
-      "id": "readme",
-      "name": "ㅇㄴㄹㄴㅇㄹ",
-      "description": "ㄷㄱㄷㄷㄱ",
-      "updatedAt": "2026-05-24T09:04:22.611Z",
-      "file": "downloads/README.txt",
-      "fileName": "README.txt",
-      "fileSize": "792 B"
-    }
-  ]
+  "utilities": []
 }
