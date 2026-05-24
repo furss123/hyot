@@ -1,6 +1,11 @@
 {
   "posts": [
     {
+      "body": "worker relay test message ok",
+      "id": "test-probe-8",
+      "title": "probe"
+    },
+    {
       "body": "dispatch test message ten chars",
       "id": "dispatch-test-1",
       "title": "test"
