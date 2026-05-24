@@ -16,7 +16,8 @@
   const secrets = window.HYOT_ADMIN_SECRETS;
 
   const MAX_CONTENTS_BYTES = 25 * 1024 * 1024;
-  const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
+  /** GitHub Git Blob API 단일 파일 상한 */
+  const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
   if (!cfg) return;
 
@@ -290,82 +291,71 @@
     return `/repos/${cfg.github.owner}/${cfg.github.repo}`;
   }
 
-  async function ensureDownloadsRelease() {
-    const tag = cfg.releasesTag || "downloads";
-    try {
-      return await api(`${repoPath()}/releases/tags/${encodeURIComponent(tag)}`);
-    } catch (err) {
-      if (!/not found|404/i.test(String(err.message))) throw err;
-      return await api(`${repoPath()}/releases`, {
-        method: "POST",
-        body: JSON.stringify({
-          tag_name: tag,
-          name: "HyoT Downloads",
-          body: "관리자 페이지에서 업로드한 파일입니다.",
-          target_commitish: cfg.github.branch,
-        }),
-      });
-    }
-  }
-
-  function uploadReleaseAsset(releaseId, file, onRatio) {
-    const name = encodeURIComponent(file.name);
-    const url = `https://uploads.github.com${repoPath()}/releases/${releaseId}/assets?name=${name}`;
-
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.onprogress = (e) => {
+  async function fileToBase64(file, onRatio) {
+    const buffer = await new Promise((ok, no) => {
+      const reader = new FileReader();
+      reader.onprogress = (e) => {
         if (e.lengthComputable && onRatio) onRatio(e.loaded / e.total);
       };
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch {
-            reject(new Error("업로드 응답을 읽을 수 없습니다."));
-          }
-          return;
-        }
-        let msg = `오류 ${xhr.status}`;
-        try {
-          const j = JSON.parse(xhr.responseText);
-          msg = j.message || msg;
-        } catch {
-          /* ignore */
-        }
-        reject(new Error(msg));
-      };
-      xhr.onerror = () => reject(new Error("네트워크 오류로 업로드에 실패했습니다."));
-      xhr.open("POST", url);
-      xhr.setRequestHeader("Authorization", `Bearer ${getToken()}`);
-      xhr.setRequestHeader("Content-Type", "application/octet-stream");
-      xhr.send(file);
+      reader.onload = () => ok(reader.result);
+      reader.onerror = () => no(reader.error);
+      reader.readAsArrayBuffer(file);
     });
+    return uint8ToBase64(new Uint8Array(buffer));
   }
 
-  async function uploadFileRelease(file, onSegmentProgress) {
+  async function uploadFileGit(file, onSegmentProgress) {
     const report = (inner) => onSegmentProgress?.(inner);
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
+    const path = `${cfg.downloadsPath}/${safe}`;
+    const branch = cfg.github.branch;
+
     report(2);
+    const b64 = await fileToBase64(file, (ratio) => report(2 + ratio * 38));
+    report(42);
 
-    let release = await ensureDownloadsRelease();
-    report(10);
+    const blob = await api(`${repoPath()}/git/blobs`, {
+      method: "POST",
+      body: JSON.stringify({ content: b64, encoding: "base64" }),
+    });
+    report(52);
 
-    const existing = release.assets?.find((a) => a.name === file.name);
-    if (existing) {
-      await api(`${repoPath()}/releases/assets/${existing.id}`, {
-        method: "DELETE",
-      });
-      release = await api(`${repoPath()}/releases/${release.id}`);
-    }
-    report(18);
+    const ref = await api(
+      `${repoPath()}/git/ref/heads/${encodeURIComponent(branch)}`
+    );
+    const parentSha = ref.object.sha;
+    report(58);
 
-    const asset = await uploadReleaseAsset(release.id, file, (ratio) => {
-      report(18 + ratio * 80);
+    const parent = await api(`${repoPath()}/git/commits/${parentSha}`);
+    report(64);
+
+    const tree = await api(`${repoPath()}/git/trees`, {
+      method: "POST",
+      body: JSON.stringify({
+        base_tree: parent.tree.sha,
+        tree: [{ path, mode: "100644", type: "blob", sha: blob.sha }],
+      }),
+    });
+    report(76);
+
+    const commit = await api(`${repoPath()}/git/commits`, {
+      method: "POST",
+      body: JSON.stringify({
+        message: `upload: ${safe}`,
+        tree: tree.sha,
+        parents: [parentSha],
+      }),
+    });
+    report(88);
+
+    await api(`${repoPath()}/git/refs/heads/${encodeURIComponent(branch)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ sha: commit.sha }),
     });
     report(100);
 
     return {
-      path: asset.browser_download_url,
+      path,
       fileName: file.name,
       fileSize: formatSize(file.size),
     };
@@ -427,7 +417,7 @@
 
   async function uploadFile(file, onSegmentProgress) {
     if (file.size > MAX_CONTENTS_BYTES) {
-      return uploadFileRelease(file, onSegmentProgress);
+      return uploadFileGit(file, onSegmentProgress);
     }
     return uploadFileContents(file, onSegmentProgress);
   }
@@ -507,7 +497,7 @@
   function rejectOversizedFile(file) {
     if (!file || file.size <= MAX_UPLOAD_BYTES) return false;
     els.file.value = "";
-    toast("2GB 이하 파일만 등록할 수 있습니다.", true);
+    toast("100MB 이하 파일만 등록할 수 있습니다.", true);
     onFilePick();
     return true;
   }
@@ -627,7 +617,7 @@
       return;
     }
     if (file && file.size > MAX_UPLOAD_BYTES) {
-      toast("2GB 이하 파일만 등록할 수 있습니다.", true);
+      toast("100MB 이하 파일만 등록할 수 있습니다.", true);
       return;
     }
 
@@ -637,10 +627,11 @@
 
     try {
       progress.set(5);
-      const { json, sha } = await readJson();
+      const { json } = await readJson();
       progress.set(12);
       const list = [...(json.utilities || [])];
       const updatedAt = nowISO();
+      let nextId = selectedId;
 
       if (isEdit()) {
         const cur = getItem();
@@ -667,10 +658,7 @@
           fileName,
           fileSize,
         };
-        progress.set(78);
-        await writeJson({ ...json, utilities: list }, sha, `update: ${name}`);
-        progress.set(90);
-        selectedId = cur.id;
+        nextId = cur.id;
         toast(`「${name}」 저장됨 · 1~2분 후 사이트 반영`);
       } else {
         const up = await uploadFile(file, (inner) => {
@@ -693,12 +681,19 @@
           fileName: up.fileName,
           fileSize: up.fileSize,
         });
-        progress.set(78);
-        await writeJson({ ...json, utilities: list }, sha, `add: ${name}`);
-        progress.set(90);
-        selectedId = id;
+        nextId = id;
         toast(`「${name}」 등록됨 · 1~2분 후 사이트 반영`);
       }
+
+      progress.set(78);
+      const { sha } = await readJson();
+      await writeJson(
+        { ...json, utilities: list },
+        sha,
+        isEdit() ? `update: ${name}` : `add: ${name}`
+      );
+      progress.set(90);
+      selectedId = nextId;
 
       progress.complete();
       await new Promise((r) => setTimeout(r, 400));
