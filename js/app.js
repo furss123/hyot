@@ -16,15 +16,12 @@ const els = {
   siteTitle: document.getElementById("site-title"),
   siteTagline: document.getElementById("site-tagline"),
   status: document.getElementById("status"),
-  recentList: document.getElementById("recent-work-list"),
-  recentEmpty: document.getElementById("recent-work-empty"),
   grid: document.getElementById("utility-grid"),
   empty: document.getElementById("empty-state"),
   footerYear: document.getElementById("footer-year"),
 };
 
 let allUtilities = [];
-let recentWorkIds = [];
 
 function setStatus(message, isError = false) {
   els.status.textContent = message;
@@ -58,19 +55,6 @@ function normalizeUtilities(raw = []) {
     console.warn(`[HyoT] ${skipped}개 항목이 필수 필드 누락으로 제외되었습니다.`);
   }
   return sortByUpdatedAt(valid);
-}
-
-function resolveRecentWorkIds(site = {}) {
-  const ids = Array.isArray(site.recentWorkIds) ? site.recentWorkIds : [];
-  return ids.filter((id) => typeof id === "string" && id.trim());
-}
-
-function partitionUtilities(utilities, ids) {
-  const idSet = new Set(ids);
-  const byId = new Map(utilities.map((item) => [item.id, item]));
-  const recent = ids.map((id) => byId.get(id)).filter(Boolean);
-  const main = utilities.filter((item) => !idSet.has(item.id));
-  return { recent, main };
 }
 
 function buildMetaText(item) {
@@ -133,10 +117,9 @@ function createPlatformButton(item, platform) {
   return span;
 }
 
-function createCard(item, { variant = "default" } = {}) {
+function createCard(item) {
   const li = document.createElement("li");
-  li.className =
-    variant === "recent" ? "utility-card utility-card--recent" : "utility-card";
+  li.className = "utility-card";
   li.dataset.id = item.id;
 
   const header = document.createElement("div");
@@ -175,22 +158,6 @@ function createCard(item, { variant = "default" } = {}) {
   return li;
 }
 
-function renderList(target, utilities, { variant = "default", emptyEl = null } = {}) {
-  if (!target) return;
-
-  target.replaceChildren();
-
-  if (!utilities.length) {
-    if (emptyEl) emptyEl.hidden = false;
-    return;
-  }
-
-  if (emptyEl) emptyEl.hidden = true;
-  const fragment = document.createDocumentFragment();
-  utilities.forEach((item) => fragment.appendChild(createCard(item, { variant })));
-  target.appendChild(fragment);
-}
-
 function applySiteMeta(site = {}) {
   if (site.title) {
     els.siteTitle.textContent = site.title;
@@ -207,28 +174,19 @@ function applySiteMeta(site = {}) {
   }
 }
 
-function renderCatalog(utilities = [], ids = []) {
-  const { recent, main } = partitionUtilities(utilities, ids);
-
-  renderList(els.recentList, recent, {
-    variant: "recent",
-    emptyEl: els.recentEmpty,
-  });
-
+function renderUtilities(utilities = []) {
   els.grid.replaceChildren();
 
-  if (!main.length) {
-    els.empty.hidden = recent.length > 0;
-    if (!recent.length) {
-      els.empty.textContent =
-        "등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.";
-    }
+  if (!utilities.length) {
+    els.empty.hidden = false;
+    els.empty.textContent =
+      "등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.";
     return;
   }
 
   els.empty.hidden = true;
   const fragment = document.createDocumentFragment();
-  main.forEach((item) => fragment.appendChild(createCard(item)));
+  utilities.forEach((item) => fragment.appendChild(createCard(item)));
   els.grid.appendChild(fragment);
 }
 
@@ -242,15 +200,13 @@ async function init() {
 
     const data = await res.json();
     applySiteMeta(data.site);
-    recentWorkIds = resolveRecentWorkIds(data.site);
     allUtilities = normalizeUtilities(data.utilities);
-    renderCatalog(allUtilities, recentWorkIds);
+    renderUtilities(allUtilities);
     setStatus("");
   } catch (err) {
     console.error("[HyoT] data load failed:", err);
     setStatus("자료 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
     els.empty.hidden = false;
-    if (els.recentEmpty) els.recentEmpty.hidden = true;
   }
 }
 

@@ -188,63 +188,8 @@ a {
   color: var(--accent-coral);
 }
 
-/* ── Catalog layout (recent + main) ──────────────────────── */
-.catalog-layout {
-  display: grid;
-  gap: 2rem;
-  align-items: start;
-}
-
-@media (min-width: 900px) {
-  .catalog-layout {
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
-    gap: 2.25rem;
-  }
-}
-
-.recent-work {
-  position: sticky;
-  top: 1rem;
-}
-
-.recent-work__title,
-.catalog-main__title {
-  margin-bottom: 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.recent-work__list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.recent-work__empty {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.utility-card--recent {
-  padding: 1.15rem 1.2rem 1.1rem;
-  border-color: rgba(168, 85, 247, 0.28);
-  box-shadow: var(--shadow-card), 0 0 0 1px rgba(168, 85, 247, 0.08);
-}
-
-.utility-card--recent .utility-card__desc {
-  -webkit-line-clamp: 3;
-}
-
 .btn-download--link {
   background: linear-gradient(135deg, #6366f1 0%, var(--accent-purple) 100%);
-}
-
-.catalog-main__title {
-  margin-bottom: 1.15rem;
 }
 
 /* ── Utility grid ────────────────────────────────────────── */
@@ -503,10 +448,6 @@ a {
   .brand__logo {
     width: 4.5rem;
     height: 4.5rem;
-  }
-
-  .recent-work {
-    position: static;
   }
 
   .utility-grid {

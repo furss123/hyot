@@ -954,32 +954,39 @@
     }
   }
 
+  function applyLocalCatalog(utilities) {
+    catalogData = {
+      ...catalogData,
+      utilities: utilities.map(migrateUtility),
+    };
+    renderList();
+  }
+
   async function deleteUtility(id) {
     const cur = catalogData?.utilities?.find((u) => u.id === id);
     if (!cur) return;
     if (!confirm("정말 삭제하시겠습니까?")) return;
 
-    const listDeletes = els.itemList.querySelectorAll(".admin-list__delete");
-    listDeletes.forEach((btn) => {
-      btn.disabled = true;
-    });
-    if (els.deleteBtn) els.deleteBtn.disabled = true;
-    toast("삭제 중…");
+    const name = cur.name;
+    const snapshot = catalogData.utilities.map((u) => ({ ...u }));
+    const nextList = catalogData.utilities.filter((u) => u.id !== id);
+
+    applyLocalCatalog(nextList);
+    if (selectedId === id) pickNew();
 
     try {
       const { json, sha } = await readJson();
-      const list = (json.utilities || []).filter((u) => u.id !== id);
-      await writeJson({ ...json, utilities: list }, sha, `remove: ${cur.name}`);
-      toast(`「${cur.name}」 삭제됨`);
-      if (selectedId === id) pickNew();
-      await load();
+      const remoteList = (json.utilities || []).filter((u) => u.id !== id);
+      await writeJson({ ...json, utilities: remoteList }, sha, `remove: ${name}`);
+      catalogData = {
+        ...json,
+        utilities: remoteList.map(migrateUtility),
+      };
+      toast(`「${name}」 삭제됨`);
     } catch (err) {
+      applyLocalCatalog(snapshot);
+      if (selectedId === id) pickItem(id);
       toast(err.message, true);
-    } finally {
-      listDeletes.forEach((btn) => {
-        btn.disabled = false;
-      });
-      if (els.deleteBtn) els.deleteBtn.disabled = false;
     }
   }
 
