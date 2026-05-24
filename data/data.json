@@ -10,14 +10,6 @@
   },
   "utilities": [
     {
-      "id": "hyot-archive-site",
-      "name": "HyoT 자료실",
-      "description": "로그인 없이 유틸리티를 배포하는 정적 자료실 웹사이트입니다.",
-      "updatedAt": "2026-05-24T12:00:00.000Z",
-      "link": "./",
-      "linkLabel": "자료실 열기"
-    },
-    {
       "id": "hyot-memory-clean",
       "name": "램쉼 RamShim",
       "description": "Windows RAM·캐시를 정리해 PC 반응 속도를 개선하는 메모리 정리 프로그램입니다.",
