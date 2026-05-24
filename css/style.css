@@ -128,10 +128,9 @@ a {
   flex-shrink: 0;
   width: 5.4rem;
   height: 5.4rem;
-  object-fit: contain;
-  background: transparent;
-  border-radius: 0;
-  box-shadow: none;
+  object-fit: cover;
+  border-radius: 1.1rem;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35);
 }
 
 .brand__title {
