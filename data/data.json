@@ -19,9 +19,9 @@
     },
     {
       "id": "quickcap-1-1-0",
-      "name": "퀵캡(QuickCap)",
+      "name": "퀵캡 QuickCap",
       "description": "Win+Shift+S로 캡처한 화면을 바로 편집·저장하는 스크린샷 도구입니다. 형광펜·도형·텍스트·AI 배경 제거를 지원합니다.",
-      "updatedAt": "2026-05-24T23:44:11.994Z",
+      "updatedAt": "2026-05-24T23:46:24.563Z",
       "windows": {
         "file": "downloads/QuickCap-1.1.0.exe",
         "fileName": "QuickCap-1.1.0.exe",
