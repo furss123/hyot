@@ -36,8 +36,13 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p class="site-footer__copy">&copy; HyoT의 자료실</p>
+      <p class="site-footer__copy">
+        저작권 &copy; <span id="footer-year">2026</span> HyoT의 자료실. All rights reserved.
+      </p>
     </div>
   </footer>
+  <script>
+    document.getElementById("footer-year").textContent = String(new Date().getFullYear());
+  </script>
 </body>
 </html>

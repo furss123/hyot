@@ -458,14 +458,18 @@ a {
 /* ── Footer ────────────────────────────────────────────────── */
 .site-footer {
   margin-top: auto;
-  padding: 2rem 0 2.5rem;
+  padding: 1.75rem 0 2.25rem;
   border-top: 1px solid var(--border-glass);
+  background: rgba(8, 10, 18, 0.35);
 }
 
 .site-footer__copy {
-  font-size: 0.8rem;
+  margin: 0;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   text-align: center;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
 
 /* ── 404 page ────────────────────────────────────────────── */
