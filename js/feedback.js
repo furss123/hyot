@@ -6,7 +6,12 @@
   if (!cfg) return;
 
   const gh = cfg.github;
-  const token = window.HYOT_FEEDBACK_TOKEN;
+  const token =
+    window.HYOT_FEEDBACK_TOKEN ||
+    (window.HYOT_FEEDBACK_TOKEN_B64 && typeof atob !== "undefined"
+      ? atob(window.HYOT_FEEDBACK_TOKEN_B64)
+      : null);
+  const ingestKey = window.HYOT_FEEDBACK_INGEST_KEY;
   const COOLDOWN_KEY = "hyot_feedback_last_submit";
 
   const platforms = window.HYOT_PLATFORMS || {};
@@ -146,6 +151,39 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  async function submitViaWorkflowDispatch(post) {
+    if (!ingestKey || !token) throw new Error("FEEDBACK_NOT_CONFIGURED");
+    const res = await fetch(
+      `https://api.github.com/repos/${gh.owner}/${gh.repo}/actions/workflows/feedback-ingest.yml/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ref: gh.branch || "main",
+          inputs: {
+            payload_json: JSON.stringify(post),
+            ingest_key: ingestKey,
+          },
+        }),
+      }
+    );
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const err = await res.json();
+        if (err?.message) msg = err.message;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(msg);
+    }
+  }
+
   async function submitViaDispatch(post) {
     const res = await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/dispatches`, {
       method: "POST",
@@ -281,7 +319,7 @@
   }
 
   function updateSubmitMode() {
-    const ready = Boolean(token);
+    const ready = Boolean(token && ingestKey);
     if (els.readyHint) els.readyHint.hidden = !ready;
     if (els.setupHint) els.setupHint.hidden = ready;
     if (els.submit) els.submit.textContent = "의견 등록";
