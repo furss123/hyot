@@ -4,6 +4,7 @@
 (function () {
   const cfg = window.HYOT_FEEDBACK_CONFIG;
   const fb = window.HyotFirebaseFeedback;
+  const relay = window.HyotFeedbackRelay;
   const ghBackend = window.HyotFeedbackGithub;
   if (!cfg) return;
 
@@ -31,6 +32,7 @@
 
   let boardReady = false;
   let useGithub = false;
+  let useRelay = false;
 
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
@@ -195,7 +197,11 @@
   async function loadPosts() {
     if (!boardReady) return;
     try {
-      const posts = useGithub ? await ghBackend.listPosts() : await fb.listPosts();
+      const posts = useRelay
+        ? await relay.listPosts()
+        : useGithub
+          ? await ghBackend.listPosts()
+          : await fb.listPosts();
       renderPosts(posts);
     } catch (err) {
       console.error("[HyoT feedback]", err);
@@ -271,7 +277,8 @@
 
     try {
       setStatus("등록 중입니다… 잠시만 기다려 주세요.");
-      if (useGithub) await ghBackend.submitFeedback(post);
+      if (useRelay) await relay.submitFeedback(post);
+      else if (useGithub) await ghBackend.submitFeedback(post);
       else await fb.addPost(post);
       sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       els.form.reset();
@@ -305,21 +312,18 @@
       }
     }
 
-    if (ghBackend?.isAvailable?.()) {
-      const ok = await ghBackend.probeToken();
-      if (ok) {
-        boardReady = true;
-        useGithub = true;
-        updateSubmitMode();
-        await loadPosts();
-        return;
-      }
+    if (relay?.isReady?.()) {
+      boardReady = true;
+      useRelay = true;
+      updateSubmitMode();
+      await loadPosts();
+      return;
     }
 
     boardReady = false;
     updateSubmitMode();
     setStatus(
-      "게시판 연결이 필요합니다. Firebase 설정(docs/feedback-firebase-setup.md) 또는 GitHub 토큰을 확인해 주세요.",
+      "게시판 연결이 필요합니다. Firebase 또는 피드백 릴레이(Cloudflare Worker) 설정을 완료해 주세요.",
       true
     );
   }

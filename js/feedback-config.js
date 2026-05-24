@@ -2,6 +2,7 @@
 window.HYOT_FEEDBACK_CONFIG = {
   catalogPath: "data/data.json",
   dataPath: "data/feedback.json",
+  relayUrl: "",
   github: {
     owner: "furss123",
     repo: "hyot",
