@@ -7,4 +7,6 @@ window.HYOT_ADMIN_CONFIG = {
   },
   dataPath: "data/data.json",
   downloadsPath: "downloads",
+  /** 25MB 초과 파일은 GitHub Releases로 업로드 */
+  releasesTag: "downloads",
 };

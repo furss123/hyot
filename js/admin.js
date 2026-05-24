@@ -15,6 +15,7 @@
   const cfg = window.HYOT_ADMIN_CONFIG;
   const secrets = window.HYOT_ADMIN_SECRETS;
 
+  const MAX_CONTENTS_BYTES = 25 * 1024 * 1024;
   const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
   if (!cfg) return;
@@ -242,6 +243,10 @@
       } catch {
         /* ignore */
       }
+      if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
+        msg =
+          "GitHub 서버가 요청을 처리하지 못했습니다. 파일이 크면 25MB 이하로 줄이거나 잠시 후 다시 시도하세요.";
+      }
       throw new Error(msg);
     }
     return res.status === 204 ? null : res.json();
@@ -258,14 +263,20 @@
     return { json: JSON.parse(text), sha: data.sha };
   }
 
+  function uint8ToBase64(bytes) {
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
   async function writeJson(json, sha, message) {
+    const text = JSON.stringify(json, null, 2) + "\n";
     const body = {
       message,
-      content: btoa(
-        String.fromCharCode(
-          ...new TextEncoder().encode(JSON.stringify(json, null, 2) + "\n")
-        )
-      ),
+      content: uint8ToBase64(new TextEncoder().encode(text)),
       branch: cfg.github.branch,
       sha,
     };
@@ -275,7 +286,92 @@
     );
   }
 
-  async function uploadFile(file, onSegmentProgress) {
+  function repoPath() {
+    return `/repos/${cfg.github.owner}/${cfg.github.repo}`;
+  }
+
+  async function ensureDownloadsRelease() {
+    const tag = cfg.releasesTag || "downloads";
+    try {
+      return await api(`${repoPath()}/releases/tags/${encodeURIComponent(tag)}`);
+    } catch (err) {
+      if (!/not found|404/i.test(String(err.message))) throw err;
+      return await api(`${repoPath()}/releases`, {
+        method: "POST",
+        body: JSON.stringify({
+          tag_name: tag,
+          name: "HyoT Downloads",
+          body: "관리자 페이지에서 업로드한 파일입니다.",
+          target_commitish: cfg.github.branch,
+        }),
+      });
+    }
+  }
+
+  function uploadReleaseAsset(releaseId, file, onRatio) {
+    const name = encodeURIComponent(file.name);
+    const url = `https://uploads.github.com${repoPath()}/releases/${releaseId}/assets?name=${name}`;
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onRatio) onRatio(e.loaded / e.total);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch {
+            reject(new Error("업로드 응답을 읽을 수 없습니다."));
+          }
+          return;
+        }
+        let msg = `오류 ${xhr.status}`;
+        try {
+          const j = JSON.parse(xhr.responseText);
+          msg = j.message || msg;
+        } catch {
+          /* ignore */
+        }
+        reject(new Error(msg));
+      };
+      xhr.onerror = () => reject(new Error("네트워크 오류로 업로드에 실패했습니다."));
+      xhr.open("POST", url);
+      xhr.setRequestHeader("Authorization", `Bearer ${getToken()}`);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.send(file);
+    });
+  }
+
+  async function uploadFileRelease(file, onSegmentProgress) {
+    const report = (inner) => onSegmentProgress?.(inner);
+    report(2);
+
+    let release = await ensureDownloadsRelease();
+    report(10);
+
+    const existing = release.assets?.find((a) => a.name === file.name);
+    if (existing) {
+      await api(`${repoPath()}/releases/assets/${existing.id}`, {
+        method: "DELETE",
+      });
+      release = await api(`${repoPath()}/releases/${release.id}`);
+    }
+    report(18);
+
+    const asset = await uploadReleaseAsset(release.id, file, (ratio) => {
+      report(18 + ratio * 80);
+    });
+    report(100);
+
+    return {
+      path: asset.browser_download_url,
+      fileName: file.name,
+      fileSize: formatSize(file.size),
+    };
+  }
+
+  async function uploadFileContents(file, onSegmentProgress) {
     const report = (inner) => onSegmentProgress?.(inner);
     const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
     const path = `${cfg.downloadsPath}/${safe}`;
@@ -327,6 +423,13 @@
       fileName: file.name,
       fileSize: formatSize(file.size),
     };
+  }
+
+  async function uploadFile(file, onSegmentProgress) {
+    if (file.size > MAX_CONTENTS_BYTES) {
+      return uploadFileRelease(file, onSegmentProgress);
+    }
+    return uploadFileContents(file, onSegmentProgress);
   }
 
   function updateEditorUI() {
