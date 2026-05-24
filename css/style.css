@@ -1403,6 +1403,10 @@ textarea.admin-field__input {
   color: var(--accent-purple-bright);
 }
 
+.feedback-form__hint--ok {
+  color: #86efac;
+}
+
 .feedback-status {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;

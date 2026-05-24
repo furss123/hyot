@@ -23,8 +23,8 @@
     body: document.getElementById("feedback-body"),
     author: document.getElementById("feedback-author"),
     submit: document.getElementById("feedback-submit"),
-    githubHint: document.getElementById("feedback-github-hint"),
-    githubLink: document.getElementById("feedback-github-link"),
+    readyHint: document.getElementById("feedback-ready-hint"),
+    setupHint: document.getElementById("feedback-setup-hint"),
   };
 
   if (!els.form) return;
@@ -142,22 +142,62 @@
     }
   }
 
-  function buildGithubIssueUrl(post) {
-    const label = categoryMap[post.category] || post.category;
-    const title = encodeURIComponent(`[${label}] ${post.title}`);
-    const body = encodeURIComponent(
-      [
-        `**대상 프로그램:** ${post.utilityLabel || post.utilityName || "-"}`,
-        `**분류:** ${label}`,
-        `**작성자:** ${post.author}`,
-        "",
-        post.body,
-        "",
-        "---",
-        "_HyoT 자료실 의견 게시판에서 전송됨_",
-      ].join("\n")
-    );
-    return `https://github.com/${gh.owner}/${gh.repo}/issues/new?title=${title}&body=${body}&labels=feedback`;
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function submitViaDispatch(post) {
+    const res = await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/dispatches`, {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        event_type: "hyot_feedback_submit",
+        client_payload: post,
+      }),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const err = await res.json();
+        if (err?.message) msg = err.message;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(msg);
+    }
+  }
+
+  async function pollForPost(postId, timeoutMs = 90000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const res = await fetch(cfg.dataPath, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        const posts = Array.isArray(data.posts) ? data.posts : [];
+        if (posts.some((p) => p.id === postId)) return true;
+      }
+      await sleep(2500);
+    }
+    throw new Error("POLL_TIMEOUT");
+  }
+
+  async function submitFeedback(post) {
+    if (!token) throw new Error("FEEDBACK_NOT_CONFIGURED");
+
+    try {
+      await persistNewPost(post);
+      return;
+    } catch (err) {
+      console.warn("[HyoT feedback] direct save failed, using dispatch:", err);
+    }
+
+    await submitViaDispatch(post);
+    await pollForPost(post.id);
   }
 
   function buildUtilityTargets(utilities = []) {
@@ -241,11 +281,10 @@
   }
 
   function updateSubmitMode() {
-    const canDirect = Boolean(token);
-    if (els.githubHint) els.githubHint.hidden = canDirect;
-    if (els.submit) {
-      els.submit.textContent = canDirect ? "의견 등록" : "GitHub으로 등록하기";
-    }
+    const ready = Boolean(token);
+    if (els.readyHint) els.readyHint.hidden = !ready;
+    if (els.setupHint) els.setupHint.hidden = ready;
+    if (els.submit) els.submit.textContent = "의견 등록";
   }
 
   function renderPosts(posts) {
@@ -366,27 +405,31 @@
     els.submit.disabled = true;
 
     try {
-      if (token) {
-        await persistNewPost(post);
-        sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
-        els.form.reset();
-        setStatus("의견이 등록되었습니다. 감사합니다!");
-        await loadPosts();
-      } else {
-        const url = buildGithubIssueUrl(post);
-        if (els.githubLink) els.githubLink.href = url;
-        window.open(url, "_blank", "noopener,noreferrer");
+      if (!token) {
         setStatus(
-          "GitHub 이슈 작성 페이지가 열렸습니다. 로그인 후 제출하면 관리자가 확인합니다.",
-          false
+          "지금은 바로 등록할 수 없습니다. 관리자가 게시판 설정을 완료하면 이용할 수 있습니다.",
+          true
         );
+        return;
       }
+
+      setStatus("등록 중입니다… 잠시만 기다려 주세요.");
+      await submitFeedback(post);
+      sessionStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+      els.form.reset();
+      await loadCatalog();
+      setStatus("의견이 등록되었습니다. 감사합니다!");
+      await loadPosts();
     } catch (err) {
       console.error("[HyoT feedback submit]", err);
-      if (String(err.message) === "NO_TOKEN") {
-        const url = buildGithubIssueUrl(post);
-        window.open(url, "_blank", "noopener,noreferrer");
-        setStatus("GitHub으로 등록 페이지를 열었습니다.", false);
+      if (String(err.message) === "FEEDBACK_NOT_CONFIGURED") {
+        setStatus("게시판 등록이 아직 준비되지 않았습니다.", true);
+      } else if (String(err.message) === "POLL_TIMEOUT") {
+        setStatus(
+          "등록 요청은 접수되었습니다. 목록에 잠시 후 표시될 수 있습니다. 새로고침해 보세요.",
+          false
+        );
+        await loadPosts();
       } else {
         setStatus("등록에 실패했습니다. 잠시 후 다시 시도해 주세요.", true);
       }
