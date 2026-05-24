@@ -5,4 +5,3 @@ desktop.ini
 node_modules/
 .serve/
 js/admin-secrets.js
-js/admin-auth.js
