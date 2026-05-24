@@ -15,9 +15,15 @@ permissions:
 
 jobs:
   save-feedback:
-    if: ${{ github.event.inputs.ingest_key == secrets.FEEDBACK_INGEST_KEY }}
     runs-on: ubuntu-latest
     steps:
+      - name: Verify ingest key
+        run: |
+          if [ "${{ github.event.inputs.ingest_key }}" != "${{ secrets.FEEDBACK_INGEST_KEY }}" ]; then
+            echo "::error::Invalid ingest key"
+            exit 1
+          fi
+
       - name: Append to feedback.json
         uses: actions/github-script@v7
         with:

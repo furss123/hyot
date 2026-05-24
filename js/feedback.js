@@ -34,6 +34,8 @@
 
   if (!els.form) return;
 
+  let tokenUsable = Boolean(token);
+
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
   );
@@ -224,6 +226,14 @@
     throw new Error("POLL_TIMEOUT");
   }
 
+  function isAuthError(err) {
+    return /(^HTTP 401$|Bad credentials|401)/i.test(String(err?.message || err));
+  }
+
+  function isActionsError(err) {
+    return /(^HTTP 403$|403|actions|workflow)/i.test(String(err?.message || err));
+  }
+
   async function submitFeedback(post) {
     if (!token) throw new Error("FEEDBACK_NOT_CONFIGURED");
 
@@ -231,11 +241,44 @@
       await persistNewPost(post);
       return;
     } catch (err) {
-      console.warn("[HyoT feedback] direct save failed, using dispatch:", err);
+      console.warn("[HyoT feedback] direct save failed:", err);
+      if (isAuthError(err)) throw err;
     }
 
-    await submitViaDispatch(post);
-    await pollForPost(post.id);
+    if (ingestKey) {
+      try {
+        await submitViaWorkflowDispatch(post);
+        await pollForPost(post.id);
+        return;
+      } catch (err) {
+        console.warn("[HyoT feedback] workflow ingest failed:", err);
+        if (isAuthError(err)) throw err;
+      }
+    }
+
+    try {
+      await submitViaDispatch(post);
+      await pollForPost(post.id);
+    } catch (err) {
+      console.warn("[HyoT feedback] repository dispatch failed:", err);
+      throw err;
+    }
+  }
+
+  async function probeToken() {
+    if (!token) return false;
+    try {
+      const res = await fetch("https://api.github.com/user", {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   function buildUtilityTargets(utilities = []) {
@@ -293,7 +336,7 @@
     els.utility.replaceChildren(fragment);
     const hasOptions = utilityTargets.size > 0;
     els.utility.disabled = !hasOptions;
-    if (els.submit) els.submit.disabled = !hasOptions;
+    refreshSubmitButton(hasOptions);
 
     if (!hasOptions) {
       setStatus("등록된 프로그램·파일이 없어 의견을 남길 수 없습니다.", true);
@@ -318,11 +361,17 @@
     }
   }
 
+  function refreshSubmitButton(hasOptions = utilityTargets.size > 0) {
+    if (!els.submit) return;
+    els.submit.disabled = !hasOptions || !tokenUsable;
+  }
+
   function updateSubmitMode() {
-    const ready = Boolean(token);
+    const ready = tokenUsable && Boolean(token);
     if (els.readyHint) els.readyHint.hidden = !ready;
     if (els.setupHint) els.setupHint.hidden = ready;
     if (els.submit) els.submit.textContent = "의견 등록";
+    refreshSubmitButton();
   }
 
   function renderPosts(posts) {
@@ -462,6 +511,18 @@
       console.error("[HyoT feedback submit]", err);
       if (String(err.message) === "FEEDBACK_NOT_CONFIGURED") {
         setStatus("게시판 등록이 아직 준비되지 않았습니다.", true);
+      } else if (isAuthError(err)) {
+        setStatus(
+          "등록 서비스 토큰이 만료되었거나 무효합니다. 저장소 관리자가 HYOT_FEEDBACK_TOKEN을 갱신한 뒤 Pages를 다시 배포해야 합니다.",
+          true
+        );
+        tokenUsable = false;
+        updateSubmitMode();
+      } else if (isActionsError(err)) {
+        setStatus(
+          "등록에 실패했습니다. GitHub 토큰에 Actions(워크플로) 쓰기 권한이 필요합니다. docs/feedback-setup.md를 참고해 주세요.",
+          true
+        );
       } else if (String(err.message) === "POLL_TIMEOUT") {
         setStatus(
           "등록 요청은 접수되었습니다. 목록에 잠시 후 표시될 수 있습니다. 새로고침해 보세요.",
@@ -480,4 +541,15 @@
   els.form.addEventListener("submit", onSubmit);
   loadCatalog();
   loadPosts();
+  probeToken().then((ok) => {
+    if (!token) return;
+    if (!ok) {
+      tokenUsable = false;
+      updateSubmitMode();
+      setStatus(
+        "등록 서비스 연결이 끊어졌습니다. 관리자가 GitHub 토큰(HYOT_FEEDBACK_TOKEN)을 새로 발급·등록한 뒤 배포해야 합니다.",
+        true
+      );
+    }
+  });
 })();
