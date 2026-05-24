@@ -16,7 +16,7 @@
   const secrets = window.HYOT_ADMIN_SECRETS;
 
   const MAX_CONTENTS_BYTES = 25 * 1024 * 1024;
-  const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+  const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
 
   if (!cfg) return;
 
@@ -245,7 +245,7 @@
       }
       if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
         msg =
-          "GitHub 서버가 요청을 처리하지 못했습니다. 파일이 크면 25MB 이하로 줄이거나 잠시 후 다시 시도하세요.";
+          "GitHub 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하거나 파일 크기를 줄여 다시 업로드하세요.";
       }
       throw new Error(msg);
     }
@@ -507,7 +507,7 @@
   function rejectOversizedFile(file) {
     if (!file || file.size <= MAX_UPLOAD_BYTES) return false;
     els.file.value = "";
-    toast("100MB 이하 파일만 등록할 수 있습니다.", true);
+    toast("2GB 이하 파일만 등록할 수 있습니다.", true);
     onFilePick();
     return true;
   }
@@ -627,7 +627,7 @@
       return;
     }
     if (file && file.size > MAX_UPLOAD_BYTES) {
-      toast("100MB 이하 파일만 등록할 수 있습니다.", true);
+      toast("2GB 이하 파일만 등록할 수 있습니다.", true);
       return;
     }
 
