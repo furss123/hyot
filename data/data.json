@@ -18,17 +18,6 @@
       }
     },
     {
-      "id": "hyot-log-analyzer",
-      "name": "HyoT 로그 분석기",
-      "description": "대용량 로그 파일에서 오류·키워드를 빠르게 검색·필터링합니다.",
-      "updatedAt": "2026-05-21T16:45:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-log-analyzer-v1.0.exe",
-        "fileName": "hyot-log-analyzer-v1.0.exe",
-        "fileSize": "50.0 MB"
-      }
-    },
-    {
       "id": "hyot-folder-sync",
       "name": "HyoT 폴더 동기화",
       "description": "로컬·USB·네트워크 폴더를 미러링하고 변경분만 동기화합니다.",
