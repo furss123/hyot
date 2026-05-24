@@ -185,15 +185,18 @@ a {
 
 .site-header__actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.5rem;
   flex-shrink: 0;
+  --header-action-min-h: 2.375rem;
 }
 
 .theme-switch {
   display: inline-flex;
-  align-items: center;
-  padding: 0.2rem;
+  align-items: stretch;
+  min-height: var(--header-action-min-h);
+  box-sizing: border-box;
+  padding: 0.22rem;
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   background: var(--bg-glass);
@@ -202,12 +205,15 @@ a {
 }
 
 .theme-switch__btn {
-  padding: 0.38rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.65rem;
   border: none;
   border-radius: calc(var(--radius-sm) - 3px);
   font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 500;
   line-height: 1.2;
   color: var(--text-muted);
   background: transparent;
@@ -673,6 +679,8 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: var(--header-action-min-h, 2.375rem);
+  box-sizing: border-box;
   padding: 0.55rem 1rem;
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
