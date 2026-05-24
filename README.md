@@ -85,6 +85,20 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 
 3. `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.
 
+## 변동 사항 자동 푸시
+
+로컬에서 수정한 내용을 `main`에 자동으로 올리려면 (최초 1회):
+
+```powershell
+.\scripts\setup-auto-push.ps1
+```
+
+- **Cursor** 에이전트 작업이 끝날 때 (`.cursor/hooks.json` → `stop`)
+- **git commit** 직후 (`.githooks/post-commit`)
+- 수동: `.\scripts\auto-push.ps1`
+
+관리자 패널에서 저장한 변경은 GitHub API로 바로 push되며, 위 스크립트와 별개입니다.
+
 ## 로컬 미리보기
 
 `file://`로 열면 JSON 로드가 차단될 수 있습니다.
