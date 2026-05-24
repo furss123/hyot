@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#0c0f1a">
+  <script>
+    (function () {
+      var m = "system";
+      try {
+        m = localStorage.getItem("hyot_theme") || "system";
+      } catch (e) {}
+      if (m !== "system" && m !== "light" && m !== "dark") m = "system";
+      document.documentElement.setAttribute("data-theme", m);
+    })();
+  </script>
   <title>페이지를 찾을 수 없습니다 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -22,6 +32,13 @@
           <h1 class="brand__title brand__title--sm">404</h1>
         </div>
       </a>
+      <div class="site-header__actions">
+        <div class="theme-switch" data-theme-switch role="radiogroup" aria-label="색상 테마">
+          <button type="button" class="theme-switch__btn is-active" data-theme-value="system" aria-pressed="true">시스템</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="light" aria-pressed="false">라이트</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="dark" aria-pressed="false">다크</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -41,6 +58,7 @@
       </p>
     </div>
   </footer>
+  <script src="js/theme.js"></script>
   <script>
     document.getElementById("footer-year").textContent = String(new Date().getFullYear());
   </script>

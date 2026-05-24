@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="HyoT의 자료실 — 업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
   <meta name="theme-color" content="#0c0f1a">
+  <script>
+    (function () {
+      var m = "system";
+      try {
+        m = localStorage.getItem("hyot_theme") || "system";
+      } catch (e) {}
+      if (m !== "system" && m !== "light" && m !== "dark") m = "system";
+      document.documentElement.setAttribute("data-theme", m);
+    })();
+  </script>
   <meta property="og:type" content="website">
   <meta property="og:title" content="HyoT의 자료실">
   <meta property="og:description" content="업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
@@ -19,14 +29,18 @@
 
   <header class="site-header">
     <div class="container site-header__inner">
-      <div class="brand">
-        <img class="brand__logo" src="assets/logo.png" alt="HyoT" width="86" height="86">
-        <div>
-          <h1 class="brand__title" id="site-title">HyoT의 자료실</h1>
-          <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
+      <div class="brand brand--site">
+        <h1 class="brand__title" id="site-title">HyoT의 자료실</h1>
+        <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
+      </div>
+      <div class="site-header__actions">
+        <a href="admin.html" class="admin-btn admin-btn--link" id="admin-nav-link">관리자</a>
+        <div class="theme-switch" data-theme-switch role="radiogroup" aria-label="색상 테마">
+          <button type="button" class="theme-switch__btn is-active" data-theme-value="system" aria-pressed="true">시스템</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="light" aria-pressed="false">라이트</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="dark" aria-pressed="false">다크</button>
         </div>
       </div>
-      <a href="admin.html" class="admin-btn admin-btn--link" id="admin-nav-link">관리자</a>
     </div>
   </header>
 
@@ -108,6 +122,7 @@
     </div>
   </footer>
 
+  <script src="js/theme.js?v=20260524"></script>
   <script src="js/platforms.js?v=20260524"></script>
   <script src="js/feedback-config.js?v=20260524"></script>
   <script src="js/feedback-auth.js?v=20260524"></script>
