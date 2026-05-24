@@ -9,12 +9,13 @@
       "id": "cleanclass-1-2-0",
       "name": "클린클래스 CleanClass",
       "description": "설명: 교실 PC에서 무단 게임·VPN·애드웨어 등을 정리해 수업·학습 환경을 지키는 PC 정리 프로그램입니다.",
-      "updatedAt": "2026-05-24T23:49:42.475Z",
+      "updatedAt": "2026-05-24T23:52:18.496Z",
       "windows": {
         "file": "downloads/CleanClass-1.2.0.exe",
         "fileName": "CleanClass-1.2.0.exe",
         "fileSize": "171.3 MB"
-      }
+      },
+      "icon": "assets/icons/cleanclass-1-2-0.png"
     },
     {
       "id": "printgod-1-0-0",
