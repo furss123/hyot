@@ -45,37 +45,37 @@ export default {
       "X-GitHub-Api-Version": "2022-11-28",
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "User-Agent": "hyot-feedback-worker",
     };
+
+    const dispatchRes = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/dispatches`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          event_type: "hyot_feedback_submit",
+          client_payload: post,
+        }),
+      }
+    );
+
+    if (dispatchRes.ok) {
+      return json({ ok: true, id: post.id });
+    }
 
     try {
       await persistPost({ owner, repo, post, headers, branch: "gh-pages" });
       try {
         await persistPost({ owner, repo, post, headers, branch: "main" });
       } catch {
-        /* main optional — public site reads gh-pages */
+        /* main optional */
       }
+      return json({ ok: true, id: post.id });
     } catch (err) {
-      try {
-        const dispatchRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/dispatches`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              event_type: "hyot_feedback_submit",
-              client_payload: post,
-            }),
-          }
-        );
-        if (!dispatchRes.ok) {
-          return json({ ok: false, error: "github_failed", detail: String(err) }, 502);
-        }
-      } catch (dispatchErr) {
-        return json({ ok: false, error: "github_failed", detail: String(dispatchErr) }, 502);
-      }
+      const detail = await dispatchRes.text().catch(() => String(err));
+      return json({ ok: false, error: "github_failed", detail }, 502);
     }
-
-    return json({ ok: true, id: post.id });
   },
 };
 
