@@ -375,26 +375,57 @@ a {
 }
 
 .btn-platform {
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.65rem;
   width: 100%;
-  min-height: 3.35rem;
-  padding: 0.62rem 0.5rem;
-  font-size: 0.82rem;
-  line-height: 1.2;
+  min-height: 0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  line-height: 1.25;
+  text-align: left;
 }
 
-.btn-platform__file-icon {
-  width: 1.05rem;
-  height: 1.05rem;
+.btn-platform__file-icon,
+.btn-platform .utility-icon--custom {
+  width: 2.1rem;
+  height: 2.1rem;
   flex-shrink: 0;
-  opacity: 0.95;
+  margin-top: 0;
 }
 
 .btn-platform__icon {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.5rem;
+  height: 1.5rem;
   flex-shrink: 0;
+}
+
+.btn-platform__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.btn-platform__name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.btn-platform__meta-line {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.88;
+  line-height: 1.2;
 }
 
 .btn-platform__label {
@@ -402,9 +433,9 @@ a {
 }
 
 .btn-platform__size {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 500;
-  opacity: 0.85;
+  opacity: 0.88;
 }
 
 .btn-platform--windows:not(.btn-platform--missing) {
@@ -420,7 +451,7 @@ a {
 .btn-platform--missing {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   background: rgba(10, 12, 22, 0.55);
@@ -430,7 +461,6 @@ a {
 }
 
 .btn-platform__missing {
-  font-size: 0.65rem;
   color: var(--text-muted);
   opacity: 0.9;
 }
