@@ -64,8 +64,9 @@ npx --yes serve .
 ## GitHub Pages 최초 설정
 
 1. 저장소 **Settings → Pages**
-2. **Build and deployment → Source:** `GitHub Actions`
-3. `main`에 push 후 Actions 탭에서 `Deploy GitHub Pages` 성공 확인
+2. **Build and deployment → Source:** `Deploy from a branch`
+3. **Branch:** `gh-pages` / `/ (root)` 선택 후 Save
+4. `main`에 push하면 Actions가 `gh-pages` 브랜치를 갱신합니다
 
 ## 기술 스택
 
