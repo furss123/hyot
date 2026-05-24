@@ -9,11 +9,16 @@
   const token = window.HYOT_FEEDBACK_TOKEN;
   const COOLDOWN_KEY = "hyot_feedback_last_submit";
 
+  const platforms = window.HYOT_PLATFORMS || {};
+  const PLATFORMS = platforms.list || [];
+  const { migrateUtility, getPlatformFile, hasExternalLink, isValidUtility } = platforms;
+
   const els = {
     form: document.getElementById("feedback-form"),
     list: document.getElementById("feedback-list"),
     empty: document.getElementById("feedback-empty"),
     status: document.getElementById("feedback-status"),
+    utility: document.getElementById("feedback-utility"),
     category: document.getElementById("feedback-category"),
     title: document.getElementById("feedback-title"),
     body: document.getElementById("feedback-body"),
@@ -28,6 +33,9 @@
   const categoryMap = Object.fromEntries(
     (cfg.categories || []).map((c) => [c.id, c.label])
   );
+
+  /** @type {Map<string, { utilityId: string, utilityName: string, platformId: string, platformLabel: string, fileName: string, utilityLabel: string }>} */
+  const utilityTargets = new Map();
 
   function setStatus(message, isError = false) {
     if (!els.status) return;
@@ -140,6 +148,7 @@
     const title = encodeURIComponent(`[${label}] ${post.title}`);
     const body = encodeURIComponent(
       [
+        `**대상 프로그램:** ${post.utilityLabel || post.utilityName || "-"}`,
         `**분류:** ${label}`,
         `**작성자:** ${post.author}`,
         "",
@@ -150,6 +159,86 @@
       ].join("\n")
     );
     return `https://github.com/${gh.owner}/${gh.repo}/issues/new?title=${title}&body=${body}&labels=feedback`;
+  }
+
+  function buildUtilityTargets(utilities = []) {
+    utilityTargets.clear();
+    if (!els.utility) return;
+
+    const fragment = document.createDocumentFragment();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "관련 프로그램·파일을 선택하세요";
+    fragment.appendChild(placeholder);
+
+    utilities.forEach((item) => {
+      let added = false;
+      PLATFORMS.forEach((p) => {
+        const pf = getPlatformFile?.(item, p.id);
+        if (!pf) return;
+        added = true;
+        const key = `${item.id}|${p.id}`;
+        const fileName = pf.fileName || pf.file.split("/").pop() || "";
+        const utilityLabel = `${item.name} — ${p.label} (${fileName})`;
+        utilityTargets.set(key, {
+          utilityId: item.id,
+          utilityName: item.name,
+          platformId: p.id,
+          platformLabel: p.label,
+          fileName,
+          utilityLabel,
+        });
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = utilityLabel;
+        fragment.appendChild(opt);
+      });
+
+      if (!added && hasExternalLink?.(item)) {
+        const key = `${item.id}|link`;
+        const linkLabel = item.linkLabel || "바로가기";
+        const utilityLabel = `${item.name} — ${linkLabel}`;
+        utilityTargets.set(key, {
+          utilityId: item.id,
+          utilityName: item.name,
+          platformId: "link",
+          platformLabel: linkLabel,
+          fileName: "",
+          utilityLabel,
+        });
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = utilityLabel;
+        fragment.appendChild(opt);
+      }
+    });
+
+    els.utility.replaceChildren(fragment);
+    const hasOptions = utilityTargets.size > 0;
+    els.utility.disabled = !hasOptions;
+    if (els.submit) els.submit.disabled = !hasOptions;
+
+    if (!hasOptions) {
+      setStatus("등록된 프로그램·파일이 없어 의견을 남길 수 없습니다.", true);
+    }
+  }
+
+  async function loadCatalog() {
+    if (!migrateUtility || !isValidUtility) {
+      buildUtilityTargets([]);
+      return;
+    }
+    try {
+      const res = await fetch(cfg.catalogPath || "data/data.json", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const utilities = (data.utilities || []).map(migrateUtility).filter(isValidUtility);
+      buildUtilityTargets(utilities);
+    } catch (err) {
+      console.error("[HyoT feedback catalog]", err);
+      buildUtilityTargets([]);
+      setStatus("프로그램 목록을 불러오지 못했습니다.", true);
+    }
   }
 
   function updateSubmitMode() {
@@ -195,7 +284,16 @@
       body.className = "feedback-item__body";
       body.textContent = post.body;
 
-      li.append(cat, title, meta, body);
+      li.append(cat, title);
+
+      if (post.utilityLabel || post.utilityName) {
+        const target = document.createElement("p");
+        target.className = "feedback-item__target";
+        target.textContent = post.utilityLabel || post.utilityName;
+        li.appendChild(target);
+      }
+
+      li.append(meta, body);
       fragment.appendChild(li);
     });
 
@@ -217,6 +315,14 @@
   }
 
   function validateForm() {
+    const utilityKey = els.utility?.value || "";
+    const target = utilityTargets.get(utilityKey);
+    if (!target) {
+      setStatus("관련 프로그램·파일을 선택해 주세요.", true);
+      els.utility?.focus();
+      return null;
+    }
+
     const title = els.title.value.trim();
     const body = els.body.value.trim();
     const author = els.author.value.trim() || "익명";
@@ -247,6 +353,12 @@
     return {
       id: `fb-${Date.now()}`,
       category: els.category.value,
+      utilityId: target.utilityId,
+      utilityName: target.utilityName,
+      platformId: target.platformId,
+      platformLabel: target.platformLabel,
+      fileName: target.fileName,
+      utilityLabel: target.utilityLabel,
       title,
       body,
       author,
@@ -302,5 +414,6 @@
 
   updateSubmitMode();
   els.form.addEventListener("submit", onSubmit);
+  loadCatalog();
   loadPosts();
 })();

@@ -1471,6 +1471,15 @@ textarea.admin-field__input {
   line-height: 1.3;
 }
 
+.feedback-item__target,
+.admin-feedback-item__target {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-purple-bright);
+  line-height: 1.35;
+}
+
 .feedback-item__meta {
   margin: 0 0 0.45rem;
   font-size: 0.72rem;

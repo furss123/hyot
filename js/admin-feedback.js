@@ -182,6 +182,15 @@
       body.className = "admin-feedback-item__body";
       body.textContent = post.body;
 
+      if (post.utilityLabel || post.utilityName) {
+        const target = document.createElement("p");
+        target.className = "admin-feedback-item__target";
+        target.textContent = post.utilityLabel || post.utilityName;
+        li.append(head, target, meta, body);
+      } else {
+        li.append(head, meta, body);
+      }
+
       const actions = document.createElement("div");
       actions.className = "admin-feedback-item__actions";
 
@@ -216,7 +225,7 @@
       delBtn.addEventListener("click", () => deletePost(post.id));
 
       actions.append(hideBtn, delBtn);
-      li.append(head, meta, body, actions);
+      li.appendChild(actions);
       fragment.appendChild(li);
     });
 

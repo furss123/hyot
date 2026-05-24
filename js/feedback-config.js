@@ -1,5 +1,6 @@
 /** 의견 게시판 공개 설정 */
 window.HYOT_FEEDBACK_CONFIG = {
+  catalogPath: "data/data.json",
   dataPath: "data/feedback.json",
   github: {
     owner: "furss123",
