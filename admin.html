@@ -47,12 +47,22 @@
           <p class="admin-hint">
             <a href="https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin" target="_blank" rel="noopener noreferrer">토큰 발급</a>
           </p>
+          <div class="admin-login-options">
+            <label class="admin-check">
+              <input type="checkbox" id="admin-remember">
+              <span>입력 내용 저장</span>
+            </label>
+            <label class="admin-check">
+              <input type="checkbox" id="admin-auto-login">
+              <span>자동 로그인</span>
+            </label>
+          </div>
           <p id="admin-login-error" class="admin-error" role="alert"></p>
-          <button type="submit" class="btn-download">로그인</button>
+          <button type="submit" class="btn-download" id="admin-login-submit">로그인</button>
         </form>
       </section>
 
-      <section id="admin-panel-view" class="admin-workspace" hidden aria-label="자료 관리">
+      <section id="admin-panel-view" class="admin-workspace is-hidden" hidden aria-label="자료 관리">
         <div class="admin-topbar">
           <button type="button" class="admin-topbar__primary" id="admin-new-btn">+ 새 자료</button>
           <div class="admin-topbar__right">
