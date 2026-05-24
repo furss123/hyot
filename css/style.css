@@ -98,16 +98,14 @@ body {
   gap: 1rem;
 }
 
-.brand__mark {
+.brand__logo {
   flex-shrink: 0;
   width: 3rem;
   height: 3rem;
   margin-top: 0.15rem;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--accent-purple), var(--accent-coral));
-  box-shadow:
-    0 0 24px rgba(168, 85, 247, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  object-fit: cover;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
 }
 
 .brand__title {
@@ -350,7 +348,7 @@ body {
     padding-top: 2rem;
   }
 
-  .brand__mark {
+  .brand__logo {
     width: 2.5rem;
     height: 2.5rem;
   }
