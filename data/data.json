@@ -29,17 +29,6 @@
       }
     },
     {
-      "id": "hyot-screen-ocr",
-      "name": "HyoT 화면 OCR",
-      "description": "화면 캡처 후 텍스트를 추출하고 클립보드·파일로 저장합니다.",
-      "updatedAt": "2026-05-17T09:40:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-screen-ocr-v2.2.exe",
-        "fileName": "hyot-screen-ocr-v2.2.exe",
-        "fileSize": "50.0 MB"
-      }
-    },
-    {
       "id": "hyot-backup-scheduler",
       "name": "HyoT 백업 스케줄러",
       "description": "지정 폴더를 주기적으로 백업하고 보관 기간·압축 옵션을 설정합니다.",
