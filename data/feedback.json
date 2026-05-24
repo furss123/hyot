@@ -1,17 +1,33 @@
 {
   "posts": [
     {
-      "id": "fb-1779656056839",
-      "category": "improvement",
+      "id": "fb-1779657488822",
+      "category": "other",
       "utilityId": "hyot-memory-clean",
       "utilityName": "램쉼 RamShim",
       "platformId": "windows",
       "platformLabel": "Windows",
       "fileName": "RamShim-1.0.0.exe",
       "utilityLabel": "램쉼 RamShim — Windows (RamShim-1.0.0.exe)",
-      "title": "[개선사항] 램쉼 RamShim — Windows (RamShim-1.0.0.exe)",
+      "title": "[기타] 램쉼 RamShim — Windows (RamShim-1.0.0.exe)",
+      "body": "sdfdssdfsfsdfsdfsdfsdfdsfsdfdfsffdf",
+      "author": "sdfsdfsfs",
+      "createdAt": "2026-05-24T21:18:08.822Z",
+      "status": "open",
+      "visibility": "admin"
+    },
+    {
+      "id": "fb-1779656056839",
+      "category": "improvement",
+      "utilityId": "hyot-memory-clean",
+      "utilityName": "ë¨ì¼ RamShim",
+      "platformId": "windows",
+      "platformLabel": "Windows",
+      "fileName": "RamShim-1.0.0.exe",
+      "utilityLabel": "ë¨ì¼ RamShim â Windows (RamShim-1.0.0.exe)",
+      "title": "[ê°ì ì¬í­] ë¨ì¼ RamShim â Windows (RamShim-1.0.0.exe)",
       "body": "SDFSDFSDSDFDFSDFSDAFSDF",
-      "author": "익명",
+      "author": "ìµëª",
       "createdAt": "2026-05-24T20:54:16.839Z",
       "status": "open"
     },
