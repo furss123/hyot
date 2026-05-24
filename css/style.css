@@ -386,31 +386,16 @@ a {
 }
 
 .btn-platform {
-  --btn-platform-font: 1.02rem;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.45rem;
+  justify-content: center;
+  gap: 0.2rem;
   width: 100%;
   min-height: 0;
-  padding: calc(0.34rem + 2px) 0.55rem;
-  font-size: var(--btn-platform-font);
-  line-height: 1;
-  text-align: left;
-}
-
-.btn-platform__icons {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  flex-shrink: 0;
-}
-
-.btn-platform__file-icon {
-  width: 1.05rem;
-  height: 1.05rem;
-  flex-shrink: 0;
-  opacity: 0.95;
+  padding: calc(0.34rem + 2px) 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .btn-platform__icon {
@@ -419,21 +404,18 @@ a {
   flex-shrink: 0;
 }
 
-.btn-platform__filename {
-  flex: 1;
-  min-width: 0;
-  font-size: 1em;
-  font-weight: 600;
-  line-height: 1;
+.btn-platform__label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.1;
   letter-spacing: -0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.btn-platform__filename--muted {
+.btn-platform__size {
+  font-size: 0.72rem;
   font-weight: 500;
-  opacity: 0.75;
+  opacity: 0.88;
+  line-height: 1.1;
 }
 
 .btn-platform--windows:not(.btn-platform--missing) {
@@ -449,7 +431,7 @@ a {
 .btn-platform--missing {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   background: rgba(10, 12, 22, 0.55);
