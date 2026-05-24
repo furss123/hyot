@@ -319,7 +319,7 @@
   }
 
   function updateSubmitMode() {
-    const ready = Boolean(token && ingestKey);
+    const ready = Boolean(token);
     if (els.readyHint) els.readyHint.hidden = !ready;
     if (els.setupHint) els.setupHint.hidden = ready;
     if (els.submit) els.submit.textContent = "의견 등록";
