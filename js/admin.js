@@ -15,6 +15,8 @@
   const cfg = window.HYOT_ADMIN_CONFIG;
   const secrets = window.HYOT_ADMIN_SECRETS;
 
+  const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
   if (!cfg) return;
 
   const $ = (id) => document.getElementById(id);
@@ -329,10 +331,19 @@
     toast("");
   }
 
+  function rejectOversizedFile(file) {
+    if (!file || file.size <= MAX_UPLOAD_BYTES) return false;
+    els.file.value = "";
+    toast("100MB 이하 파일만 등록할 수 있습니다.", true);
+    onFilePick();
+    return true;
+  }
+
   function onFilePick() {
     const f = els.file.files[0];
     if (f) {
-      els.fileDisplay.textContent = f.name;
+      if (rejectOversizedFile(f)) return;
+      els.fileDisplay.textContent = `${f.name} (${formatSize(f.size)})`;
       return;
     }
     const item = getItem();
@@ -442,8 +453,8 @@
       toast("파일을 선택하세요.", true);
       return;
     }
-    if (file && file.size > 50 * 1024 * 1024) {
-      toast("50MB 이하만 업로드할 수 있습니다.", true);
+    if (file && file.size > MAX_UPLOAD_BYTES) {
+      toast("100MB 이하 파일만 등록할 수 있습니다.", true);
       return;
     }
 
