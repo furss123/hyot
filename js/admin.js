@@ -57,10 +57,6 @@
     iconDisplay: $("admin-icon-display"),
     iconPreview: $("admin-icon-preview"),
     iconPreviewEmpty: $("admin-icon-preview-empty"),
-    iconRemove: $("admin-icon-remove"),
-    iconManual: $("admin-icon-manual"),
-    iconManualWrap: $("admin-icon-manual-wrap"),
-    iconPath: $("admin-icon-path"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
     platformStatus: $("admin-platform-status"),
@@ -509,17 +505,6 @@
     return `/repos/${cfg.github.owner}/${cfg.github.repo}`;
   }
 
-  function normalizeIconPath(input) {
-    let path = String(input || "").trim().replace(/^\/+/, "");
-    if (!path) return "";
-    const root = cfg.iconsPath || "assets/icons";
-    if (!path.startsWith(`${root}/`)) {
-      path = path.replace(/^assets\/icons\/?/i, "");
-      path = `${root}/${path}`;
-    }
-    return path;
-  }
-
   function iconExtFromName(name) {
     const ext = String(name).split(".").pop().toLowerCase();
     if (ext === "jpeg") return "jpg";
@@ -536,15 +521,6 @@
         .slice(0, 48) || `item-${Date.now()}`;
     const ext = iconExtFromName(fileName);
     return `${cfg.iconsPath || "assets/icons"}/${safeId}.${ext}`;
-  }
-
-  async function verifyIconFile(path) {
-    const ref = encodeURIComponent(cfg.github.branch);
-    const data = await api(`${repoPath()}/contents/${path}?ref=${ref}`);
-    if (data.type && data.type !== "file") {
-      throw new Error("아이콘 경로가 올바르지 않습니다. assets/icons/ 아래 이미지를 지정하세요.");
-    }
-    return { path };
   }
 
   async function fileToBase64(file, onProgress) {
@@ -594,13 +570,6 @@
   }
 
   async function resolveIconForSave({ base, utilityId }) {
-    if (els.iconRemove?.checked) return null;
-    if (useIconManual()) {
-      const path = normalizeIconPath(els.iconPath?.value);
-      if (!path) throw new Error("아이콘 경로를 입력하세요.");
-      await verifyIconFile(path);
-      return path;
-    }
     const iconFile = els.icon?.files?.[0];
     if (iconFile) return (await uploadIconFile(iconFile, utilityId)).path;
     return base?.icon || null;
@@ -693,10 +662,6 @@
     return Boolean(els.fileManual?.checked);
   }
 
-  function useIconManual() {
-    return Boolean(els.iconManual?.checked);
-  }
-
   function updateIconPreview(path) {
     if (!els.iconPreview) return;
     if (path) {
@@ -713,18 +678,8 @@
 
   function resetIconFields() {
     if (els.icon) els.icon.value = "";
-    if (els.iconRemove) els.iconRemove.checked = false;
-    if (els.iconManual) els.iconManual.checked = false;
-    if (els.iconPath) els.iconPath.value = "";
-    if (els.iconDisplay) els.iconDisplay.textContent = "아이콘 이미지 선택";
+    if (els.iconDisplay) els.iconDisplay.textContent = "아이콘 이미지 업로드";
     updateIconPreview(null);
-    toggleIconManualUI();
-  }
-
-  function toggleIconManualUI() {
-    const manual = useIconManual();
-    if (els.iconManualWrap) els.iconManualWrap.hidden = !manual;
-    if (manual && els.icon) els.icon.value = "";
   }
 
   function onIconPick() {
@@ -740,7 +695,6 @@
       toast("아이콘은 2MB 이하만 업로드할 수 있습니다.", true);
       return;
     }
-    if (els.iconRemove) els.iconRemove.checked = false;
     if (els.iconDisplay) els.iconDisplay.textContent = f.name;
     updateIconPreview(URL.createObjectURL(f));
   }
@@ -844,7 +798,6 @@
     els.name.value = item.name;
     els.description.value = item.description;
     els.file.value = "";
-    if (els.iconPath && item.icon) els.iconPath.value = item.icon;
     updateEditorUI();
     renderList();
     els.form.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1231,10 +1184,6 @@
   els.file.addEventListener("change", onFilePick);
   els.fileManual?.addEventListener("change", toggleManualFileUI);
   els.icon?.addEventListener("change", onIconPick);
-  els.iconManual?.addEventListener("change", toggleIconManualUI);
-  els.iconRemove?.addEventListener("change", () => {
-    if (els.iconRemove.checked && els.icon) els.icon.value = "";
-  });
   document.querySelectorAll('input[name="admin-platform"]').forEach((radio) => {
     radio.addEventListener("change", onPlatformChange);
   });
