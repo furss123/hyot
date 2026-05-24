@@ -6,16 +6,6 @@
   },
   "utilities": [
     {
-      "id": "sample-screenshot",
-      "name": "화면 캡쳐 도구",
-      "description": "영역 지정 캡쳐와 클립보드 저장을 지원하는 경량 캡쳐 유틸리티입니다.",
-      "updatedAt": "2026-05-24",
-      "version": "0.1.0",
-      "fileSize": "1 KB",
-      "file": "downloads/sample-screenshot.zip",
-      "fileName": "hyot-screenshot.zip"
-    },
-    {
       "id": "sample-pdf-merge",
       "name": "PDF 병합기",
       "description": "여러 PDF를 드래그 한 번으로 합치는 간단한 병합 도구입니다.",
