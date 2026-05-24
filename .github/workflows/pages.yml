@@ -15,6 +15,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject admin credentials (not stored in main branch)
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const id = process.env.HYOT_ADMIN_ID || "";
+          const hash = process.env.HYOT_ADMIN_PASSWORD_SHA256 || "";
+          if (!id || !hash) {
+            console.log("::warning::HYOT_ADMIN_ID / HYOT_ADMIN_PASSWORD_SHA256 not set. Admin login disabled on site.");
+            fs.writeFileSync("js/admin-secrets.js", "window.HYOT_ADMIN_SECRETS=null;\n");
+          } else {
+            const payload = { adminId: id, adminPasswordSha256: hash };
+            fs.writeFileSync(
+              "js/admin-secrets.js",
+              `window.HYOT_ADMIN_SECRETS=${JSON.stringify(payload)};\n`
+            );
+          }
+          NODE
+        env:
+          HYOT_ADMIN_ID: ${{ secrets.HYOT_ADMIN_ID }}
+          HYOT_ADMIN_PASSWORD_SHA256: ${{ secrets.HYOT_ADMIN_PASSWORD_SHA256 }}
+
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:

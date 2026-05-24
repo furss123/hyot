@@ -1,23 +1,21 @@
 /**
- * HyoT의 자료실 — 관리자 패널
- * GitHub API로 data.json 갱신 및 downloads/ 파일 업로드
+ * HyoT의 자료실 — 관리자 페이지 (admin.html)
  */
 
 (function () {
   const STORAGE_TOKEN = "hyot_github_token";
   const STORAGE_USER = "hyot_admin_user";
+  const STORAGE_SESSION = "hyot_admin_session";
 
   const cfg = window.HYOT_ADMIN_CONFIG;
+  const secrets = window.HYOT_ADMIN_SECRETS;
+
   if (!cfg) {
     console.warn("[HyoT Admin] admin-config.js 가 없습니다.");
     return;
   }
 
   const els = {
-    openBtn: document.getElementById("admin-open-btn"),
-    modal: document.getElementById("admin-modal"),
-    backdrop: document.querySelector("[data-admin-close]"),
-    closeBtn: document.getElementById("admin-close-btn"),
     loginView: document.getElementById("admin-login-view"),
     panelView: document.getElementById("admin-panel-view"),
     loginForm: document.getElementById("admin-login-form"),
@@ -46,12 +44,19 @@
   let catalogData = null;
   let isEditMode = false;
 
+  function getAuth() {
+    if (!secrets?.adminId || !secrets?.adminPasswordSha256) {
+      return null;
+    }
+    return secrets;
+  }
+
   function getToken() {
     return sessionStorage.getItem(STORAGE_TOKEN);
   }
 
   function isLoggedIn() {
-    return Boolean(getToken());
+    return sessionStorage.getItem(STORAGE_SESSION) === "1" && Boolean(getToken());
   }
 
   function setPanelStatus(msg, isError = false) {
@@ -102,8 +107,9 @@
   }
 
   function refreshUpdatedAtField() {
-    els.updatedAt.value = todayISO();
-    els.updatedAt.title = "업로드·저장 시 오늘 날짜로 자동 설정됩니다";
+    if (els.updatedAt) {
+      els.updatedAt.value = todayISO();
+    }
   }
 
   async function githubApi(path, options = {}) {
@@ -116,7 +122,7 @@
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        ...(options.body && !(options.body instanceof FormData)
+        ...(options.body
           ? { "Content-Type": "application/json" }
           : {}),
         ...options.headers,
@@ -185,11 +191,7 @@
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        const base64 = String(result).split(",")[1];
-        resolve(base64);
-      };
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
@@ -208,7 +210,6 @@
     placeholder.value = "";
     placeholder.textContent = "수정할 항목 선택";
     els.editSelect.append(placeholder);
-
     utilities.forEach((item) => {
       const opt = document.createElement("option");
       opt.value = item.id;
@@ -247,39 +248,30 @@
   function showView(loggedIn) {
     els.loginView.hidden = loggedIn;
     els.panelView.hidden = !loggedIn;
-    els.openBtn.classList.toggle("admin-btn--active", loggedIn);
-    els.openBtn.textContent = loggedIn ? "관리자 ✓" : "관리자";
   }
 
-  function openModal() {
-    els.modal.hidden = false;
-    document.body.classList.add("admin-modal-open");
+  async function initDashboard() {
+    const user = sessionStorage.getItem(STORAGE_USER) || "관리자";
+    els.userLabel.textContent = `${user} 님`;
+    showView(true);
     refreshUpdatedAtField();
-
-    if (isLoggedIn()) {
-      showView(true);
-      const user = sessionStorage.getItem(STORAGE_USER);
-      els.userLabel.textContent = user ? `${user} 님` : "관리자";
-      loadCatalog()
-        .then(() => {
-          populateEditSelect();
-          setMode(false);
-        })
-        .catch((err) => setPanelStatus(err.message, true));
-    } else {
-      showView(false);
-      setLoginError("");
-    }
-  }
-
-  function closeModal() {
-    els.modal.hidden = true;
-    document.body.classList.remove("admin-modal-open");
+    await loadCatalog();
+    populateEditSelect();
+    setMode(false);
+    setPanelStatus("");
   }
 
   async function handleLogin(e) {
     e.preventDefault();
     setLoginError("");
+
+    const auth = getAuth();
+    if (!auth) {
+      setLoginError(
+        "관리자 인증이 설정되지 않았습니다. 저장소 Secrets를 확인하세요."
+      );
+      return;
+    }
 
     const adminId = els.adminId.value.trim();
     const password = els.password.value;
@@ -291,33 +283,31 @@
     }
 
     try {
-      if (adminId !== cfg.adminId) {
+      if (adminId !== auth.adminId) {
         setLoginError("아이디가 올바르지 않습니다.");
         return;
       }
 
       const hash = await sha256Hex(password);
-      if (hash !== cfg.adminPasswordSha256) {
+      if (hash !== auth.adminPasswordSha256) {
         setLoginError("비밀번호가 올바르지 않습니다.");
         return;
       }
 
       sessionStorage.setItem(STORAGE_TOKEN, token);
-      const user = await verifyToken();
-      sessionStorage.setItem(STORAGE_USER, cfg.adminId);
+      await verifyToken();
+      sessionStorage.setItem(STORAGE_USER, auth.adminId);
+      sessionStorage.setItem(STORAGE_SESSION, "1");
 
       els.adminId.value = "";
       els.password.value = "";
       els.token.value = "";
-      showView(true);
-      els.userLabel.textContent = `${cfg.adminId} 님`;
-      await loadCatalog();
-      populateEditSelect();
-      setMode(false);
-      setPanelStatus("");
+
+      await initDashboard();
     } catch (err) {
       sessionStorage.removeItem(STORAGE_TOKEN);
       sessionStorage.removeItem(STORAGE_USER);
+      sessionStorage.removeItem(STORAGE_SESSION);
       setLoginError(err.message || "로그인에 실패했습니다.");
     }
   }
@@ -325,10 +315,11 @@
   function handleLogout() {
     sessionStorage.removeItem(STORAGE_TOKEN);
     sessionStorage.removeItem(STORAGE_USER);
+    sessionStorage.removeItem(STORAGE_SESSION);
     catalogData = null;
     showView(false);
     setPanelStatus("");
-    closeModal();
+    els.loginForm.reset();
   }
 
   function getSelectedItem() {
@@ -425,15 +416,13 @@
         );
         setPanelStatus(`「${name}」 수정 완료. 사이트 반영까지 1~2분 걸릴 수 있습니다.`);
       } else {
-        if (!fileInput) return;
-
         const uploaded = await uploadDownloadFile(fileInput);
         let id = slugify(fileInput.name);
         if (utilities.some((u) => u.id === id)) {
           id = `${id}-${Date.now().toString(36)}`;
         }
 
-        const entry = {
+        utilities.unshift({
           id,
           name,
           description,
@@ -441,9 +430,8 @@
           file: uploaded.path,
           fileName: uploaded.fileName,
           fileSize: uploaded.fileSize,
-        };
+        });
 
-        utilities.unshift(entry);
         const content = JSON.stringify({ ...json, utilities }, null, 2) + "\n";
         await writeRepoFile(
           cfg.dataPath,
@@ -458,7 +446,7 @@
       populateEditSelect();
       els.utilityForm.reset();
       refreshUpdatedAtField();
-      if (window.HyotApp?.refresh) await window.HyotApp.refresh();
+      setMode(false);
     } catch (err) {
       setPanelStatus(err.message || "저장에 실패했습니다.", true);
     } finally {
@@ -472,7 +460,11 @@
       setPanelStatus("삭제할 항목을 선택하세요.", true);
       return;
     }
-    if (!confirm(`「${existing.name}」 항목을 목록에서 삭제할까요?\n(다운로드 파일은 저장소에 남을 수 있습니다.)`)) {
+    if (
+      !confirm(
+        `「${existing.name}」 항목을 목록에서 삭제할까요?\n(다운로드 파일은 저장소에 남을 수 있습니다.)`
+      )
+    ) {
       return;
     }
 
@@ -481,7 +473,9 @@
 
     try {
       const { json, sha } = await readRepoFile(cfg.dataPath);
-      const utilities = (json.utilities || []).filter((u) => u.id !== existing.id);
+      const utilities = (json.utilities || []).filter(
+        (u) => u.id !== existing.id
+      );
       const content = JSON.stringify({ ...json, utilities }, null, 2) + "\n";
       await writeRepoFile(
         cfg.dataPath,
@@ -493,7 +487,6 @@
       await loadCatalog();
       populateEditSelect();
       setMode(false);
-      if (window.HyotApp?.refresh) await window.HyotApp.refresh();
     } catch (err) {
       setPanelStatus(err.message || "삭제에 실패했습니다.", true);
     } finally {
@@ -501,9 +494,6 @@
     }
   }
 
-  els.openBtn.addEventListener("click", openModal);
-  els.closeBtn.addEventListener("click", closeModal);
-  els.backdrop.addEventListener("click", closeModal);
   els.loginForm.addEventListener("submit", handleLogin);
   els.logoutBtn.addEventListener("click", handleLogout);
   els.utilityForm.addEventListener("submit", handleSubmit);
@@ -522,12 +512,14 @@
     if (item) fillFormFromItem(item);
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !els.modal.hidden) closeModal();
-  });
-
   if (isLoggedIn()) {
-    els.openBtn.classList.add("admin-btn--active");
-    els.openBtn.textContent = "관리자 ✓";
+    initDashboard().catch((err) => {
+      handleLogout();
+      setLoginError(err.message);
+    });
+  } else if (!getAuth()) {
+    setLoginError(
+      "배포 환경에서 관리자 Secrets가 설정되지 않았습니다. README의 설정 안내를 참고하세요."
+    );
   }
 })();

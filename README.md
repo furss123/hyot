@@ -13,8 +13,10 @@ hyot/
 ├── 404.html                # GitHub Pages용 404
 ├── css/style.css           # 스타일
 ├── js/app.js               # 목록 렌더링·검색
+├── admin.html              # 관리자 로그인·관리 페이지
 ├── js/admin.js             # 관리자 패널 (GitHub API)
-├── js/admin-config.js      # 관리자 비밀번호·저장소 설정
+├── js/admin-config.js      # 공개 저장소 설정
+├── js/admin-secrets.js     # 로컬 전용 (gitignore)
 ├── data/data.json          # 프로그램 메타데이터 (관리자 편집)
 ├── downloads/              # 배포 파일 (.zip, .exe 등)
 ├── assets/favicon.svg
@@ -22,20 +24,35 @@ hyot/
 └── .nojekyll
 ```
 
-## 관리자 패널 (웹에서 업로드)
+## 관리자 패널
 
-사이트 우측 상단 **관리자** 버튼 → 로그인 후 이름·설명·파일을 등록합니다.  
-`업데이트` 날짜는 **저장할 때마다 오늘 날짜로 자동** 입력됩니다.
+메인 화면 **우측 상단「관리자」** → `admin.html` 로그인 페이지로 이동합니다.
 
-### 최초 설정
+- 아이디·비밀번호는 **GitHub 저장소 Secrets**에만 보관 (소스 코드에 없음)
+- `업데이트` 날짜는 저장 시 **오늘 날짜 자동** 입력
+- [GitHub 토큰](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) (`repo` 권한) — 파일 업로드용
 
-1. 사이트 **관리자** → 아이디·비밀번호 입력
-2. [GitHub 토큰 발급](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) — classic, **`repo`** 권한 (파일 업로드용)
-3. 새 등록 / 수정 / 삭제
+### GitHub Secrets 설정 (최초 1회)
 
-비밀번호 변경 시 `js/admin-config.js`의 `adminPasswordSha256` 값을 갱신합니다.
+저장소 **Settings → Secrets and variables → Actions → New repository secret**
 
-토큰은 브라우저 `sessionStorage`에만 저장되며, 저장소에 커밋되지 않습니다.
+| Name | Value |
+|------|--------|
+| `HYOT_ADMIN_ID` | 관리자 아이디 |
+| `HYOT_ADMIN_PASSWORD_SHA256` | 비밀번호의 SHA-256 해시 (hex) |
+
+비밀번호 해시 생성 (PowerShell):
+
+```powershell
+$bytes = [System.Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes("여기에비밀번호"))
+($bytes | ForEach-Object { $_.ToString("x2") }) -join ""
+```
+
+Secrets 저장 후 `main`에 push하면 배포 시 `admin-secrets.js`가 자동 생성됩니다.
+
+### 로컬 개발
+
+`js/admin-secrets.example.js`를 `js/admin-secrets.js`로 복사한 뒤 값을 채웁니다. (`admin-secrets.js`는 git에 올라가지 않음)
 
 ### 수동 추가 (JSON 직접 편집)
 

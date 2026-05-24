@@ -127,6 +127,21 @@ body {
   font-weight: 400;
 }
 
+.brand--link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand__eyebrow {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.brand__title--sm {
+  font-size: 1.35rem;
+}
+
 /* ── Intro ───────────────────────────────────────────────── */
 .site-main {
   padding-bottom: 4rem;
@@ -429,8 +444,12 @@ body {
 }
 
 /* ── Admin button & modal ────────────────────────────────── */
-.admin-btn {
+.admin-btn,
+.admin-btn--link {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.55rem 1rem;
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
@@ -440,6 +459,8 @@ body {
   color: var(--text-secondary);
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-decoration: none;
   cursor: pointer;
   transition:
     color var(--transition),
@@ -447,7 +468,8 @@ body {
     box-shadow var(--transition);
 }
 
-.admin-btn:hover {
+.admin-btn:hover,
+.admin-btn--link:hover {
   color: var(--text-primary);
   border-color: var(--border-glow);
 }
@@ -458,70 +480,35 @@ body {
   box-shadow: 0 0 20px var(--accent-purple-dim);
 }
 
-body.admin-modal-open {
-  overflow: hidden;
+/* ── Admin page ──────────────────────────────────────────── */
+.admin-page {
+  padding-top: 0.5rem;
 }
 
-.admin-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+.admin-page__container {
+  max-width: 520px;
+  margin-inline: auto;
 }
 
-.admin-modal[hidden] {
-  display: none;
-}
-
-.admin-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(4, 6, 12, 0.75);
-  backdrop-filter: blur(4px);
-}
-
-.admin-modal__panel {
-  position: relative;
-  width: min(480px, 100%);
-  max-height: min(90vh, 720px);
-  overflow-y: auto;
-  padding: 1.35rem 1.4rem 1.5rem;
+.admin-card {
+  padding: 1.5rem 1.4rem 1.6rem;
   border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
+  background: var(--bg-glass);
   border: 1px solid var(--border-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   box-shadow: var(--shadow-card), var(--shadow-glow);
 }
 
-.admin-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.admin-modal__title {
-  font-size: 1.15rem;
+.admin-card__title {
+  font-size: 1.2rem;
   font-weight: 600;
+  margin-bottom: 0.35rem;
 }
 
-.admin-modal__close {
-  width: 2rem;
-  height: 2rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 1.4rem;
-  line-height: 1;
+.admin-card__subtitle {
+  font-size: 0.8rem;
   color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-}
-
-.admin-modal__close:hover {
-  color: var(--text-primary);
-  background: var(--bg-glass);
 }
 
 .admin-lead {
