@@ -5,16 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0c0f1a">
-  <script>
-    (function () {
-      var m = "system";
-      try {
-        m = localStorage.getItem("hyot_theme") || "system";
-      } catch (e) {}
-      if (m !== "system" && m !== "light" && m !== "dark") m = "system";
-      document.documentElement.setAttribute("data-theme", m);
-    })();
-  </script>
+  <script src="js/theme-init.js"></script>
   <title>관리자 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -225,7 +216,7 @@
     </div>
   </footer>
 
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20260526"></script>
   <script src="js/admin-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>

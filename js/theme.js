@@ -30,10 +30,17 @@
     if (meta) meta.setAttribute("content", META_COLORS[resolved]);
   }
 
+  function applyResolved(mode) {
+    const resolved = resolvedTheme(mode);
+    document.documentElement.dataset.resolvedTheme = resolved;
+    document.documentElement.style.colorScheme = resolved;
+  }
+
   function applyTheme(mode) {
     const value = normalize(mode);
     document.documentElement.dataset.theme = value;
     localStorage.setItem(STORAGE_KEY, value);
+    applyResolved(value);
     updateMetaThemeColor(value);
     syncControls(value);
   }
@@ -59,11 +66,12 @@
       applyTheme(btn.getAttribute("data-theme-value"));
     });
 
-    window
-      .matchMedia("(prefers-color-scheme: dark)")
-      .addEventListener("change", () => {
-        if (getStored() === "system") updateMetaThemeColor("system");
-      });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (getStored() === "system") {
+        applyResolved("system");
+        updateMetaThemeColor("system");
+      }
+    });
   }
 
   applyTheme(getStored());
