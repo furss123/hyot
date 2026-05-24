@@ -40,6 +40,7 @@
     form: $("admin-utility-form"),
     name: $("admin-name"),
     description: $("admin-description"),
+    updatedAt: $("admin-updated-at"),
     file: $("admin-file"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
@@ -131,11 +132,8 @@
     localStorage.setItem(LS_AUTO_LOGIN, els.autoLogin.checked ? "1" : "0");
   }
 
-  function todayISO() {
-    const d = new Date();
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 10);
+  function nowISO() {
+    return new Date().toISOString();
   }
 
   function formatDate(iso) {
@@ -145,6 +143,28 @@
       month: "short",
       day: "numeric",
     }).format(d);
+  }
+
+  function formatDateTime(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso || "";
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  }
+
+  function refreshUpdatedAtField() {
+    if (!els.updatedAt) return;
+    const item = getItem();
+    if (item?.updatedAt) {
+      els.updatedAt.value = formatDateTime(item.updatedAt);
+      return;
+    }
+    els.updatedAt.value = "저장 시 자동 설정";
   }
 
   function formatSize(bytes) {
@@ -280,6 +300,7 @@
       els.file.required = true;
       els.fileDisplay.textContent = "파일 선택";
     }
+    refreshUpdatedAtField();
   }
 
   function renderList() {
@@ -464,7 +485,7 @@
     try {
       const { json, sha } = await readJson();
       const list = [...(json.utilities || [])];
-      const updatedAt = todayISO();
+      const updatedAt = nowISO();
 
       if (isEdit()) {
         const cur = getItem();

@@ -92,6 +92,12 @@
                 <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="짧은 설명"></textarea>
               </label>
 
+              <label class="admin-field">
+                <span class="admin-field__label">업데이트 날짜</span>
+                <input id="admin-updated-at" class="admin-field__input admin-field__input--readonly" type="text" readonly tabindex="-1" aria-readonly="true">
+                <p class="admin-hint">저장(업로드) 시점의 날짜·시간이 자동으로 기록됩니다.</p>
+              </label>
+
               <div class="admin-field">
                 <span class="admin-field__label" id="admin-file-label">파일 <span id="admin-file-required" class="admin-required">*</span></span>
                 <label class="admin-file-btn" id="admin-dropzone">

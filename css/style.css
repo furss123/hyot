@@ -777,6 +777,13 @@ textarea.admin-field__input {
   min-height: 5rem;
 }
 
+.admin-field__input--readonly {
+  cursor: default;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
 .admin-required {
   color: var(--accent-coral);
 }
