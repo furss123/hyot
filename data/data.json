@@ -16,17 +16,6 @@
         "fileName": "RamShim-1.0.0-Portable.exe",
         "fileSize": "68.3 MB"
       }
-    },
-    {
-      "id": "hyot-text-diff",
-      "name": "HyoT 텍스트 비교",
-      "description": "두 문서·코드·설정 파일의 차이를 나란히 비교해 표시합니다.",
-      "updatedAt": "2026-05-18T15:00:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-text-diff-v1.1.exe",
-        "fileName": "hyot-text-diff-v1.1.exe",
-        "fileSize": "50.0 MB"
-      }
     }
   ]
 }
