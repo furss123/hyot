@@ -305,6 +305,8 @@ a {
   font-size: calc(0.875rem + 0.5pt);
   color: var(--text-secondary);
   line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
