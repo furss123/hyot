@@ -96,8 +96,15 @@ function getDownloadFileName(item, platform, pf) {
 function createPlatformButton(item, platform) {
   const pf = getPlatformFile(item, platform.id);
 
+  const icons = document.createElement("span");
+  icons.className = "btn-platform__icons";
+  icons.append(
+    createFileIcon(getFileKindFromPlatformFile(pf), "btn-platform__file-icon"),
+    createPlatformIcon(platform.id)
+  );
+
   const inner = document.createDocumentFragment();
-  inner.appendChild(createPlatformIcon(platform.id));
+  inner.appendChild(icons);
 
   if (pf) {
     const fileName = document.createElement("span");
