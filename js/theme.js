@@ -32,13 +32,14 @@
 
   function applyResolved(mode) {
     const resolved = resolvedTheme(mode);
-    document.documentElement.dataset.resolvedTheme = resolved;
-    document.documentElement.style.colorScheme = resolved;
+    const root = document.documentElement;
+    root.setAttribute("data-resolved-theme", resolved);
+    root.style.colorScheme = resolved;
   }
 
   function applyTheme(mode) {
     const value = normalize(mode);
-    document.documentElement.dataset.theme = value;
+    document.documentElement.setAttribute("data-theme", value);
     localStorage.setItem(STORAGE_KEY, value);
     applyResolved(value);
     updateMetaThemeColor(value);

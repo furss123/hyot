@@ -92,6 +92,99 @@ function getDownloadFileName(item, platform, pf) {
   return item.name;
 }
 
+function createDownloadSpinner() {
+  const spinner = document.createElement("span");
+  spinner.className = "btn-platform__spinner";
+  spinner.setAttribute("aria-hidden", "true");
+  return spinner;
+}
+
+function setPlatformDownloadLoading(link, loading) {
+  link.classList.toggle("is-downloading", loading);
+  link.setAttribute("aria-busy", loading ? "true" : "false");
+  if (loading) {
+    if (!link.dataset.downloadAriaLabel) {
+      link.dataset.downloadAriaLabel = link.getAttribute("aria-label") || "";
+    }
+    link.setAttribute("aria-label", "다운로드 준비 중…");
+    return;
+  }
+  if (link.dataset.downloadAriaLabel) {
+    link.setAttribute("aria-label", link.dataset.downloadAriaLabel);
+    delete link.dataset.downloadAriaLabel;
+  }
+}
+
+const DOWNLOAD_PROBE_TIMEOUT_MS = 15000;
+
+async function waitUntilFileReady(url) {
+  const ac = new AbortController();
+  const timer = window.setTimeout(() => ac.abort(), DOWNLOAD_PROBE_TIMEOUT_MS);
+  try {
+    try {
+      const head = await fetch(url, {
+        method: "HEAD",
+        cache: "no-store",
+        credentials: "same-origin",
+        signal: ac.signal,
+      });
+      if (head.ok) return true;
+      if (head.status !== 405 && head.status !== 501) return false;
+    } catch (_) {
+      /* HEAD blocked or unsupported — try range */
+    }
+
+    const range = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: ac.signal,
+      headers: { Range: "bytes=0-0" },
+    });
+    return range.ok || range.status === 206;
+  } catch (_) {
+    return false;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function triggerPlatformDownload(link) {
+  const a = document.createElement("a");
+  a.href = link.href;
+  if (link.download) a.download = link.download;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+async function handlePlatformDownloadClick(event) {
+  const link = event.target.closest("a.btn-platform");
+  if (!link || link.classList.contains("btn-platform--missing")) return;
+
+  event.preventDefault();
+  if (link.classList.contains("is-downloading")) return;
+
+  setPlatformDownloadLoading(link, true);
+  try {
+    await waitUntilFileReady(link.href);
+    triggerPlatformDownload(link);
+  } catch (err) {
+    console.warn("[HyoT] download probe failed, trying direct download:", err);
+    triggerPlatformDownload(link);
+  } finally {
+    window.setTimeout(() => setPlatformDownloadLoading(link, false), 320);
+  }
+}
+
+function bindPlatformDownloads() {
+  if (els.grid.dataset.downloadBound === "1") return;
+  els.grid.dataset.downloadBound = "1";
+  els.grid.addEventListener("click", handlePlatformDownloadClick);
+}
+
 function createPlatformButton(item, platform) {
   const pf = getPlatformFile(item, platform.id);
 
@@ -120,7 +213,7 @@ function createPlatformButton(item, platform) {
       "aria-label",
       `${item.name} — ${getDownloadFileName(item, platform, pf)}${ariaSize} 다운로드`
     );
-    link.append(inner);
+    link.append(inner, createDownloadSpinner());
     return link;
   }
 
@@ -218,6 +311,7 @@ function renderUtilities(utilities = []) {
 
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
+  bindPlatformDownloads();
   setStatus("자료 목록을 불러오는 중…");
 
   try {

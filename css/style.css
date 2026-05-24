@@ -5,11 +5,10 @@
   --radius-lg: 22px;
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-theme: 0.28s ease;
   --container: min(1120px, 100% - 2.5rem);
 }
 
-[data-resolved-theme="dark"] {
+html[data-resolved-theme="dark"] {
   --bg-deep: #07080f;
   --bg-navy: #0c0f1a;
   --bg-elevated: rgba(18, 22, 38, 0.72);
@@ -52,7 +51,7 @@
   color-scheme: dark;
 }
 
-[data-resolved-theme="light"] {
+html[data-resolved-theme="light"] {
   --bg-deep: #e9ebf2;
   --bg-navy: #f4f5fa;
   --bg-elevated: #ffffff;
@@ -117,11 +116,8 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--text-primary);
-  background: var(--bg-deep);
+  background-color: var(--bg-deep);
   -webkit-font-smoothing: antialiased;
-  transition:
-    color var(--transition-theme),
-    background-color var(--transition-theme);
 }
 
 img {
@@ -150,7 +146,6 @@ a {
     radial-gradient(ellipse 50% 30% at 0% 80%, var(--page-glow-3), transparent 45%),
     linear-gradient(180deg, var(--bg-navy) 0%, var(--bg-deep) 100%);
   pointer-events: none;
-  transition: background var(--transition-theme);
 }
 
 .container {
@@ -206,14 +201,11 @@ a {
   background: var(--bg-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition:
-    background var(--transition-theme),
-    border-color var(--transition-theme);
 }
 
-[data-resolved-theme="light"] .theme-switch,
-[data-resolved-theme="light"] .admin-btn,
-[data-resolved-theme="light"] .admin-btn--link {
+html[data-resolved-theme="light"] .theme-switch,
+html[data-resolved-theme="light"] .admin-btn,
+html[data-resolved-theme="light"] .admin-btn--link {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -368,12 +360,10 @@ a {
   transition:
     transform var(--transition),
     border-color var(--transition),
-    box-shadow var(--transition),
-    background var(--transition-theme),
-    color var(--transition-theme);
+    box-shadow var(--transition);
 }
 
-[data-resolved-theme="light"] .utility-card {
+html[data-resolved-theme="light"] .utility-card {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -544,6 +534,7 @@ a {
 }
 
 .btn-platform {
+  position: relative;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -554,6 +545,45 @@ a {
   font-size: 0.85rem;
   line-height: 1.15;
   text-align: center;
+}
+
+.btn-platform.is-downloading {
+  pointer-events: none;
+  cursor: wait;
+}
+
+.btn-platform.is-downloading:hover {
+  transform: none;
+}
+
+.btn-platform.is-downloading .btn-platform__icon,
+.btn-platform.is-downloading .btn-platform__label,
+.btn-platform.is-downloading .btn-platform__size {
+  visibility: hidden;
+}
+
+.btn-platform__spinner {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: -0.7rem 0 0 -0.7rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-platform-spin 0.7s linear infinite;
+}
+
+.btn-platform.is-downloading .btn-platform__spinner {
+  display: block;
+}
+
+@keyframes btn-platform-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-platform__icon {
@@ -1526,17 +1556,13 @@ textarea.admin-field__input {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--shadow-card);
-  transition:
-    background var(--transition-theme),
-    border-color var(--transition-theme),
-    box-shadow var(--transition-theme);
 }
 
-[data-resolved-theme="light"] .feedback-form,
-[data-resolved-theme="light"] .feedback-list-panel,
-[data-resolved-theme="light"] .admin-login-card,
-[data-resolved-theme="light"] .admin-editor,
-[data-resolved-theme="light"] .admin-list-wrap {
+html[data-resolved-theme="light"] .feedback-form,
+html[data-resolved-theme="light"] .feedback-list-panel,
+html[data-resolved-theme="light"] .admin-login-card,
+html[data-resolved-theme="light"] .admin-editor,
+html[data-resolved-theme="light"] .admin-list-wrap {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -1659,11 +1685,11 @@ textarea.admin-field__input {
   background: rgba(168, 85, 247, 0.16);
 }
 
-[data-resolved-theme="light"] .feedback-item__category--improvement {
+html[data-resolved-theme="light"] .feedback-item__category--improvement {
   background: rgba(29, 78, 216, 0.12);
 }
 
-[data-resolved-theme="light"] .feedback-item__category--other {
+html[data-resolved-theme="light"] .feedback-item__category--other {
   color: var(--accent-purple);
   background: var(--accent-purple-dim);
 }
