@@ -18,17 +18,6 @@
       }
     },
     {
-      "id": "hyot-image-batch",
-      "name": "HyoT 이미지 일괄 변환",
-      "description": "JPG·PNG·WebP 일괄 리사이즈·압축·이름 변경을 한 번에 처리합니다.",
-      "updatedAt": "2026-05-22T11:00:00.000Z",
-      "windows": {
-        "file": "downloads/hyot-image-batch-v3.1.exe",
-        "fileName": "hyot-image-batch-v3.1.exe",
-        "fileSize": "50.0 MB"
-      }
-    },
-    {
       "id": "hyot-log-analyzer",
       "name": "HyoT 로그 분석기",
       "description": "대용량 로그 파일에서 오류·키워드를 빠르게 검색·필터링합니다.",
