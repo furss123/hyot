@@ -222,20 +222,109 @@
     return sessionStorage.getItem(STORAGE_TOKEN);
   }
 
+  function setLoginMessage(msg, isOk = false) {
+    els.loginError.textContent = msg;
+    els.loginError.classList.toggle("admin-error--ok", Boolean(isOk && msg));
+  }
+
+  async function verifyRepoToken(token) {
+    const userRes = await githubRequest("/user", token);
+    if (!userRes.ok) {
+      let msg = `오류 ${userRes.status}`;
+      try {
+        const j = await userRes.json();
+        msg = j.message || msg;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(`토큰이 유효하지 않습니다. ${msg}`);
+    }
+
+    const scopesRaw = userRes.headers.get("X-OAuth-Scopes") || "";
+    const scopes = scopesRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const user = await userRes.json();
+
+    const repoRes = await githubRequest(
+      `/repos/${cfg.github.owner}/${cfg.github.repo}`,
+      token
+    );
+    if (!repoRes.ok) {
+      let msg = `오류 ${repoRes.status}`;
+      try {
+        const j = await repoRes.json();
+        msg = j.message || msg;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(`저장소 접근 실패: ${msg}`);
+    }
+    const repo = await repoRes.json();
+    const canPush = Boolean(repo.permissions?.push || repo.permissions?.admin);
+    const hasRepoScope =
+      scopes.includes("repo") || scopes.includes("public_repo");
+
+    return {
+      username: user.login,
+      scopes,
+      scopeLabel: scopes.length ? scopes.join(", ") : "Fine-grained",
+      canPush,
+      hasRepoScope,
+      repoName: repo.full_name,
+    };
+  }
+
+  function formatTokenCheck(result) {
+    if (result.canPush) {
+      return `권한 확인 완료 · ${result.username} · ${result.repoName} push 가능 · scope: ${result.scopeLabel}`;
+    }
+    if (result.scopes.length && !result.hasRepoScope) {
+      return `repo/public_repo 권한이 없습니다. scope: ${result.scopeLabel}`;
+    }
+    return `${result.repoName}에 push 권한이 없습니다. scope: ${result.scopeLabel}`;
+  }
+
+  async function onVerifyToken() {
+    const token = $("admin-token").value.trim();
+    const btn = $("admin-verify-token");
+    if (!token) {
+      setLoginMessage("GitHub 토큰을 입력한 뒤 확인하세요.");
+      return;
+    }
+
+    btn.disabled = true;
+    setLoginMessage("권한 확인 중…");
+
+    try {
+      const result = await verifyRepoToken(token);
+      setLoginMessage(formatTokenCheck(result), result.canPush);
+    } catch (err) {
+      setLoginMessage(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   function isLoggedIn() {
     return sessionStorage.getItem(STORAGE_SESSION) === "1" && Boolean(getToken());
   }
 
-  async function api(path, options = {}) {
-    const res = await fetch(`https://api.github.com${path}`, {
+  async function githubRequest(path, token, options = {}) {
+    return fetch(`https://api.github.com${path}`, {
       ...options,
       headers: {
         Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${getToken()}`,
+        Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
         ...(options.body ? { "Content-Type": "application/json" } : {}),
       },
     });
+  }
+
+  async function api(path, options = {}) {
+    const res = await githubRequest(path, getToken(), options);
     if (!res.ok) {
       let msg = `오류 ${res.status}`;
       try {
@@ -549,13 +638,17 @@
     }
 
     sessionStorage.setItem(STORAGE_TOKEN, token);
-    await api("/user");
-    const repo = await api(`/repos/${cfg.github.owner}/${cfg.github.repo}`);
-    if (!repo.permissions?.push && !repo.permissions?.admin) {
-      throw new Error("저장소 쓰기 권한이 있는 토큰이 필요합니다.");
+    const access = await verifyRepoToken(token);
+    if (!access.canPush) {
+      throw new Error(
+        access.scopes.length && !access.hasRepoScope
+          ? "토큰에 repo 또는 public_repo 권한이 필요합니다."
+          : `${access.repoName} 저장소에 push 권한이 없습니다.`
+      );
     }
 
     sessionStorage.setItem(STORAGE_SESSION, "1");
+    setLoginMessage(formatTokenCheck(access), true);
     persistLoginPreferences(id, password, token);
 
     if (!silent) {
@@ -567,14 +660,14 @@
 
   async function onLogin(e) {
     e.preventDefault();
-    els.loginError.textContent = "";
+    setLoginMessage("");
 
     const id = $("admin-id").value.trim();
     const pw = $("admin-password").value;
     const token = $("admin-token").value.trim();
 
     if (!id || !pw || !token) {
-      els.loginError.textContent = "모든 항목을 입력하세요.";
+      setLoginMessage("모든 항목을 입력하세요.");
       return;
     }
 
@@ -586,7 +679,7 @@
     } catch (err) {
       clearSession();
       setView("login");
-      els.loginError.textContent = err.message;
+      setLoginMessage(err.message);
     } finally {
       els.loginForm.classList.remove("is-busy");
       els.loginSubmit.disabled = false;
@@ -740,6 +833,7 @@
   });
 
   els.loginForm.addEventListener("submit", onLogin);
+  $("admin-verify-token").addEventListener("click", onVerifyToken);
   els.logoutBtn.addEventListener("click", logout);
   els.newBtn.addEventListener("click", pickNew);
   els.form.addEventListener("submit", onSave);

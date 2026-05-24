@@ -841,6 +841,39 @@ textarea.admin-field__input {
   color: var(--accent-coral);
 }
 
+.admin-error--ok {
+  color: #86efac;
+}
+
+.admin-btn-check {
+  width: 100%;
+  margin-bottom: 0.55rem;
+  padding: 0.62rem 1rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    color var(--transition),
+    background var(--transition);
+}
+
+.admin-btn-check:hover {
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+  background: var(--accent-purple-dim);
+}
+
+.admin-btn-check:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .admin-btn-danger {
   padding: 0.72rem 1rem;
   border: 1px solid rgba(249, 115, 138, 0.45);
