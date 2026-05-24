@@ -2,9 +2,30 @@
   "site": {
     "title": "HyoT의 자료실",
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
-    "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
+    "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다.",
+    "recentWorkIds": ["hyot-archive-site", "hyot-memory-clean"]
   },
   "utilities": [
+    {
+      "id": "hyot-archive-site",
+      "name": "HyoT 자료실",
+      "description": "로그인 없이 유틸리티를 배포하는 정적 자료실 웹사이트입니다.",
+      "updatedAt": "2026-05-24T12:00:00.000Z",
+      "link": "./",
+      "linkLabel": "자료실 열기"
+    },
+    {
+      "id": "hyot-memory-clean",
+      "name": "램쉼 RamShim",
+      "description": "Windows RAM·캐시를 정리해 PC 반응 속도를 개선하는 메모리 정리 프로그램입니다.",
+      "updatedAt": "2026-05-24T11:30:00.000Z",
+      "version": "1.0.0",
+      "windows": {
+        "file": "downloads/RamShim-1.0.0-Portable.exe",
+        "fileName": "RamShim-1.0.0-Portable.exe",
+        "fileSize": "68.3 MB"
+      }
+    },
     {
       "id": "hyot-excel-merge",
       "name": "HyoT 엑셀 병합기",

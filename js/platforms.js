@@ -43,6 +43,10 @@
     return PLATFORMS.some((p) => getPlatformFile(item, p.id));
   }
 
+  function hasExternalLink(item) {
+    return typeof item?.link === "string" && item.link.trim().length > 0;
+  }
+
   function isValidUtility(item) {
     return (
       item &&
@@ -50,7 +54,7 @@
       typeof item.name === "string" &&
       typeof item.description === "string" &&
       typeof item.updatedAt === "string" &&
-      hasAnyPlatform(item)
+      (hasAnyPlatform(item) || hasExternalLink(item))
     );
   }
 
@@ -76,6 +80,7 @@
     migrateUtility,
     getPlatformFile,
     hasAnyPlatform,
+    hasExternalLink,
     isValidUtility,
     createPlatformIcon,
   };

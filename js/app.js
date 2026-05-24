@@ -3,19 +3,28 @@
  */
 
 const DATA_URL = "data/data.json";
-const { list: PLATFORMS, migrateUtility, getPlatformFile, isValidUtility, createPlatformIcon } =
-  window.HYOT_PLATFORMS;
+const {
+  list: PLATFORMS,
+  migrateUtility,
+  getPlatformFile,
+  hasExternalLink,
+  isValidUtility,
+  createPlatformIcon,
+} = window.HYOT_PLATFORMS;
 
 const els = {
   siteTitle: document.getElementById("site-title"),
   siteTagline: document.getElementById("site-tagline"),
   status: document.getElementById("status"),
+  recentList: document.getElementById("recent-work-list"),
+  recentEmpty: document.getElementById("recent-work-empty"),
   grid: document.getElementById("utility-grid"),
   empty: document.getElementById("empty-state"),
   footerYear: document.getElementById("footer-year"),
 };
 
 let allUtilities = [];
+let recentWorkIds = [];
 
 function setStatus(message, isError = false) {
   els.status.textContent = message;
@@ -51,6 +60,19 @@ function normalizeUtilities(raw = []) {
   return sortByUpdatedAt(valid);
 }
 
+function resolveRecentWorkIds(site = {}) {
+  const ids = Array.isArray(site.recentWorkIds) ? site.recentWorkIds : [];
+  return ids.filter((id) => typeof id === "string" && id.trim());
+}
+
+function partitionUtilities(utilities, ids) {
+  const idSet = new Set(ids);
+  const byId = new Map(utilities.map((item) => [item.id, item]));
+  const recent = ids.map((id) => byId.get(id)).filter(Boolean);
+  const main = utilities.filter((item) => !idSet.has(item.id));
+  return { recent, main };
+}
+
 function buildMetaText(item) {
   const parts = [`업데이트 · ${formatDate(item.updatedAt)}`];
   if (item.version) parts.push(`v${item.version}`);
@@ -60,6 +82,19 @@ function buildMetaText(item) {
   }).filter(Boolean);
   if (sizes.length) parts.push(sizes.join(" · "));
   return parts.join(" · ");
+}
+
+function createLinkButton(item) {
+  const link = document.createElement("a");
+  link.className = "btn-download btn-download--link";
+  link.href = item.link;
+  link.textContent = item.linkLabel || "바로가기";
+  if (item.link.startsWith("http")) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+  link.setAttribute("aria-label", `${item.name} — ${link.textContent}`);
+  return link;
 }
 
 function createPlatformButton(item, platform) {
@@ -98,9 +133,10 @@ function createPlatformButton(item, platform) {
   return span;
 }
 
-function createCard(item) {
+function createCard(item, { variant = "default" } = {}) {
   const li = document.createElement("li");
-  li.className = "utility-card";
+  li.className =
+    variant === "recent" ? "utility-card utility-card--recent" : "utility-card";
   li.dataset.id = item.id;
 
   const header = document.createElement("div");
@@ -120,16 +156,39 @@ function createCard(item) {
 
   header.append(name, desc, meta);
 
-  const downloads = document.createElement("div");
-  downloads.className = "utility-card__downloads";
-  downloads.setAttribute("role", "group");
-  downloads.setAttribute("aria-label", "플랫폼별 다운로드");
-  PLATFORMS.forEach((platform) => {
-    downloads.appendChild(createPlatformButton(item, platform));
-  });
+  const actions = document.createElement("div");
+  actions.className = "utility-card__downloads";
 
-  li.append(header, downloads);
+  if (hasExternalLink(item)) {
+    actions.setAttribute("role", "group");
+    actions.setAttribute("aria-label", "바로가기");
+    actions.appendChild(createLinkButton(item));
+  } else {
+    actions.setAttribute("role", "group");
+    actions.setAttribute("aria-label", "플랫폼별 다운로드");
+    PLATFORMS.forEach((platform) => {
+      actions.appendChild(createPlatformButton(item, platform));
+    });
+  }
+
+  li.append(header, actions);
   return li;
+}
+
+function renderList(target, utilities, { variant = "default", emptyEl = null } = {}) {
+  if (!target) return;
+
+  target.replaceChildren();
+
+  if (!utilities.length) {
+    if (emptyEl) emptyEl.hidden = false;
+    return;
+  }
+
+  if (emptyEl) emptyEl.hidden = true;
+  const fragment = document.createDocumentFragment();
+  utilities.forEach((item) => fragment.appendChild(createCard(item, { variant })));
+  target.appendChild(fragment);
 }
 
 function applySiteMeta(site = {}) {
@@ -148,19 +207,28 @@ function applySiteMeta(site = {}) {
   }
 }
 
-function renderUtilities(utilities = []) {
+function renderCatalog(utilities = [], ids = []) {
+  const { recent, main } = partitionUtilities(utilities, ids);
+
+  renderList(els.recentList, recent, {
+    variant: "recent",
+    emptyEl: els.recentEmpty,
+  });
+
   els.grid.replaceChildren();
 
-  if (!utilities.length) {
-    els.empty.hidden = false;
-    els.empty.textContent =
-      "등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.";
+  if (!main.length) {
+    els.empty.hidden = recent.length > 0;
+    if (!recent.length) {
+      els.empty.textContent =
+        "등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.";
+    }
     return;
   }
 
   els.empty.hidden = true;
   const fragment = document.createDocumentFragment();
-  utilities.forEach((item) => fragment.appendChild(createCard(item)));
+  main.forEach((item) => fragment.appendChild(createCard(item)));
   els.grid.appendChild(fragment);
 }
 
@@ -174,13 +242,15 @@ async function init() {
 
     const data = await res.json();
     applySiteMeta(data.site);
+    recentWorkIds = resolveRecentWorkIds(data.site);
     allUtilities = normalizeUtilities(data.utilities);
-    renderUtilities(allUtilities);
+    renderCatalog(allUtilities, recentWorkIds);
     setStatus("");
   } catch (err) {
     console.error("[HyoT] data load failed:", err);
     setStatus("자료 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
     els.empty.hidden = false;
+    if (els.recentEmpty) els.recentEmpty.hidden = true;
   }
 }
 

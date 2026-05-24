@@ -605,6 +605,8 @@
 
     items.forEach((item) => {
       const li = document.createElement("li");
+      li.className = "admin-list__row";
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "admin-list__item";
@@ -613,7 +615,18 @@
       const migrated = migrateUtility(item);
       btn.innerHTML = `<span class="admin-list__name">${escapeHtml(item.name)}</span><span class="admin-list__meta">${formatDate(item.updatedAt)}</span><span class="admin-list__platforms">${platformBadgesHtml(migrated)}</span>`;
       btn.addEventListener("click", () => pickItem(item.id));
-      li.append(btn);
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "admin-list__delete";
+      del.textContent = "삭제";
+      del.setAttribute("aria-label", `「${item.name}」 삭제`);
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteUtility(item.id);
+      });
+
+      li.append(btn, del);
       els.itemList.append(li);
     });
   }
@@ -941,25 +954,39 @@
     }
   }
 
-  async function onDelete() {
-    const cur = getItem();
-    if (!cur || !confirm(`「${cur.name}」을(를) 삭제할까요?`)) return;
+  async function deleteUtility(id) {
+    const cur = catalogData?.utilities?.find((u) => u.id === id);
+    if (!cur) return;
+    if (!confirm("정말 삭제하시겠습니까?")) return;
 
-    els.deleteBtn.disabled = true;
+    const listDeletes = els.itemList.querySelectorAll(".admin-list__delete");
+    listDeletes.forEach((btn) => {
+      btn.disabled = true;
+    });
+    if (els.deleteBtn) els.deleteBtn.disabled = true;
     toast("삭제 중…");
 
     try {
       const { json, sha } = await readJson();
-      const list = (json.utilities || []).filter((u) => u.id !== cur.id);
+      const list = (json.utilities || []).filter((u) => u.id !== id);
       await writeJson({ ...json, utilities: list }, sha, `remove: ${cur.name}`);
       toast(`「${cur.name}」 삭제됨`);
+      if (selectedId === id) pickNew();
       await load();
-      pickNew();
     } catch (err) {
       toast(err.message, true);
     } finally {
-      els.deleteBtn.disabled = false;
+      listDeletes.forEach((btn) => {
+        btn.disabled = false;
+      });
+      if (els.deleteBtn) els.deleteBtn.disabled = false;
     }
+  }
+
+  async function onDelete() {
+    const cur = getItem();
+    if (!cur) return;
+    await deleteUtility(cur.id);
   }
 
   els.remember.addEventListener("change", () => {
