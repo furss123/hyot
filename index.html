@@ -20,7 +20,7 @@
   <header class="site-header">
     <div class="container site-header__inner">
       <div class="brand">
-        <img class="brand__logo" src="assets/logo.png" alt="" width="86" height="86">
+        <img class="brand__logo" src="assets/logo.png" alt="HyoT" width="86" height="86">
         <div>
           <h1 class="brand__title" id="site-title">HyoT의 자료실</h1>
           <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
@@ -30,7 +30,7 @@
     </div>
   </header>
 
-  <main class="site-main">
+  <main class="site-main" id="main-content">
     <div class="container">
       <h2 class="visually-hidden">자료 목록</h2>
 
@@ -55,6 +55,7 @@
       if (link) {
         link.classList.add("admin-btn--active");
         link.textContent = "관리자 ✓";
+        link.setAttribute("aria-label", "관리자 (로그인됨)");
       }
     }
   </script>

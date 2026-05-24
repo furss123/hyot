@@ -252,7 +252,19 @@
 
   function onFilePick() {
     const f = els.file.files[0];
-    els.fileDisplay.textContent = f ? f.name : isEdit() ? els.fileDisplay.textContent : "파일 선택";
+    if (f) {
+      els.fileDisplay.textContent = f.name;
+      return;
+    }
+    const item = getItem();
+    if (item) {
+      const fname = item.fileName || item.file?.split("/").pop() || "";
+      els.fileDisplay.textContent = fname
+        ? `현재: ${fname} — 클릭하여 교체`
+        : "파일 선택";
+    } else {
+      els.fileDisplay.textContent = "파일 선택";
+    }
   }
 
   async function load() {

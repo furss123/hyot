@@ -4,31 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0c0f1a">
   <title>관리자 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="admin-body">
+<body>
   <div class="page-bg" aria-hidden="true"></div>
 
   <header class="site-header site-header--compact">
     <div class="container site-header__inner">
       <a href="./" class="brand brand--link">
-        <img class="brand__logo" src="assets/logo.png" alt="" width="86" height="86">
+        <img class="brand__logo" src="assets/logo.png" alt="HyoT" width="86" height="86">
         <div>
           <p class="brand__eyebrow">HyoT의 자료실</p>
           <h1 class="brand__title brand__title--sm">관리자</h1>
         </div>
       </a>
+      <a href="./" class="admin-btn admin-btn--link">← 자료실</a>
     </div>
   </header>
 
-  <main class="site-main admin-page">
+  <main class="site-main admin-page" id="main-content">
     <div class="container admin-wrap">
 
-      <section id="admin-login-view" class="admin-login-card">
-        <h2 class="admin-login-card__title">로그인</h2>
+      <section id="admin-login-view" class="admin-login-card" aria-labelledby="admin-login-title">
+        <h2 id="admin-login-title" class="admin-login-card__title">로그인</h2>
         <form id="admin-login-form" class="admin-form">
           <label class="admin-field">
             <span class="admin-field__label">아이디</span>
@@ -50,11 +52,10 @@
         </form>
       </section>
 
-      <section id="admin-panel-view" class="admin-workspace" hidden>
+      <section id="admin-panel-view" class="admin-workspace" hidden aria-label="자료 관리">
         <div class="admin-topbar">
           <button type="button" class="admin-topbar__primary" id="admin-new-btn">+ 새 자료</button>
           <div class="admin-topbar__right">
-            <a href="./" class="admin-topbar__link">자료실</a>
             <button type="button" class="admin-topbar__link" id="admin-logout-btn">로그아웃</button>
           </div>
         </div>
@@ -62,31 +63,33 @@
         <p id="admin-panel-status" class="admin-toast" role="status" hidden></p>
 
         <div class="admin-layout">
-          <nav class="admin-list-wrap" aria-label="자료 목록">
+          <nav class="admin-list-wrap" aria-label="등록된 자료">
             <ul id="admin-item-list" class="admin-list"></ul>
             <p id="admin-list-empty" class="admin-list-empty">등록된 자료가 없습니다.<br>「+ 새 자료」로 추가하세요.</p>
           </nav>
 
-          <form id="admin-utility-form" class="admin-editor">
+          <form id="admin-utility-form" class="admin-editor" aria-labelledby="admin-editor-badge">
             <p id="admin-editor-badge" class="admin-editor__badge">새 자료</p>
 
-            <label class="admin-field">
-              <span class="admin-field__label">이름</span>
-              <input id="admin-name" class="admin-field__input" type="text" required maxlength="80" placeholder="프로그램 이름">
-            </label>
-
-            <label class="admin-field">
-              <span class="admin-field__label">설명</span>
-              <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="짧은 설명"></textarea>
-            </label>
-
-            <label class="admin-field">
-              <span class="admin-field__label" id="admin-file-label">파일 <span id="admin-file-required" class="admin-required">*</span></span>
-              <label class="admin-file-btn" id="admin-dropzone">
-                <input id="admin-file" class="admin-file-btn__input" type="file">
-                <span id="admin-file-display">파일 선택</span>
+            <div class="admin-editor__fields">
+              <label class="admin-field">
+                <span class="admin-field__label">이름</span>
+                <input id="admin-name" class="admin-field__input" type="text" required maxlength="80" placeholder="프로그램 이름">
               </label>
-            </label>
+
+              <label class="admin-field">
+                <span class="admin-field__label">설명</span>
+                <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="짧은 설명"></textarea>
+              </label>
+
+              <div class="admin-field">
+                <span class="admin-field__label" id="admin-file-label">파일 <span id="admin-file-required" class="admin-required">*</span></span>
+                <label class="admin-file-btn" id="admin-dropzone">
+                  <input id="admin-file" class="admin-file-btn__input" type="file">
+                  <span id="admin-file-display">파일 선택</span>
+                </label>
+              </div>
+            </div>
 
             <div class="admin-editor__actions">
               <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
@@ -99,8 +102,17 @@
     </div>
   </main>
 
+  <footer class="site-footer">
+    <div class="container">
+      <p class="site-footer__copy">&copy; <span id="footer-year"></span> HyoT의 자료실</p>
+    </div>
+  </footer>
+
   <script src="js/admin-config.js"></script>
   <script src="js/admin-auth.js"></script>
   <script src="js/admin.js" defer></script>
+  <script>
+    document.getElementById("footer-year").textContent = String(new Date().getFullYear());
+  </script>
 </body>
 </html>
