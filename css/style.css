@@ -94,18 +94,18 @@ body {
 
 .brand {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.15rem;
 }
 
 .brand__logo {
   flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
-  margin-top: 0.15rem;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .brand__title {
@@ -349,8 +349,8 @@ body {
   }
 
   .brand__logo {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 3.75rem;
+    height: 3.75rem;
   }
 
   .utility-grid {
