@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="admin-body">
   <div class="page-bg" aria-hidden="true"></div>
 
-  <header class="site-header">
+  <header class="site-header site-header--compact">
     <div class="container site-header__inner">
       <a href="./" class="brand brand--link">
         <img class="brand__logo" src="assets/logo.png" alt="" width="86" height="86">
@@ -21,16 +21,14 @@
           <h1 class="brand__title brand__title--sm">관리자</h1>
         </div>
       </a>
-      <a href="./" class="admin-btn admin-btn--link">← 자료실</a>
     </div>
   </header>
 
   <main class="site-main admin-page">
-    <div class="container admin-page__container">
+    <div class="container admin-wrap">
 
-      <section id="admin-login-view" class="admin-card admin-card--narrow">
-        <h2 class="admin-card__title">관리자 로그인</h2>
-        <p class="admin-lead">자료 등록·수정은 관리자만 가능합니다.</p>
+      <section id="admin-login-view" class="admin-login-card">
+        <h2 class="admin-login-card__title">로그인</h2>
         <form id="admin-login-form" class="admin-form">
           <label class="admin-field">
             <span class="admin-field__label">아이디</span>
@@ -41,82 +39,60 @@
             <input id="admin-password" class="admin-field__input" type="password" autocomplete="current-password" required>
           </label>
           <label class="admin-field">
-            <span class="admin-field__label">GitHub Personal Access Token</span>
-            <input id="admin-token" class="admin-field__input" type="password" autocomplete="off" placeholder="ghp_..." required>
+            <span class="admin-field__label">GitHub 토큰</span>
+            <input id="admin-token" class="admin-field__input" type="password" autocomplete="off" placeholder="repo 권한" required>
           </label>
           <p class="admin-hint">
-            파일 업로드용 ·
             <a href="https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin" target="_blank" rel="noopener noreferrer">토큰 발급</a>
-            (classic · <code>repo</code>)
           </p>
           <p id="admin-login-error" class="admin-error" role="alert"></p>
-          <button type="submit" class="btn-download admin-form__submit">로그인</button>
+          <button type="submit" class="btn-download">로그인</button>
         </form>
       </section>
 
-      <section id="admin-panel-view" class="admin-dashboard" hidden>
-        <header class="admin-dash-header">
-          <div>
-            <p class="admin-card__subtitle">자료 관리</p>
-            <p id="admin-user-label" class="admin-user"></p>
+      <section id="admin-panel-view" class="admin-workspace" hidden>
+        <div class="admin-topbar">
+          <button type="button" class="admin-topbar__primary" id="admin-new-btn">+ 새 자료</button>
+          <div class="admin-topbar__right">
+            <a href="./" class="admin-topbar__link">자료실</a>
+            <button type="button" class="admin-topbar__link" id="admin-logout-btn">로그아웃</button>
           </div>
-          <button type="button" class="admin-link-btn" id="admin-logout-btn">로그아웃</button>
-        </header>
+        </div>
 
-        <p id="admin-panel-status" class="admin-status admin-status--banner" role="status"></p>
+        <p id="admin-panel-status" class="admin-toast" role="status" hidden></p>
 
-        <div class="admin-dashboard__grid">
-          <aside class="admin-list-panel admin-card">
-            <button type="button" class="admin-new-btn" id="admin-new-btn">+ 새 자료 등록</button>
-            <p id="admin-list-count" class="admin-list-count"></p>
-            <ul id="admin-item-list" class="admin-item-list" role="list"></ul>
-            <p id="admin-list-empty" class="admin-list-empty" hidden>등록된 자료가 없습니다.</p>
-          </aside>
+        <div class="admin-layout">
+          <nav class="admin-list-wrap" aria-label="자료 목록">
+            <ul id="admin-item-list" class="admin-list"></ul>
+            <p id="admin-list-empty" class="admin-list-empty">등록된 자료가 없습니다.<br>「+ 새 자료」로 추가하세요.</p>
+          </nav>
 
-          <div class="admin-form-panel admin-card">
-            <h2 id="admin-form-title" class="admin-form-panel__title">새 자료 등록</h2>
-            <p id="admin-form-subtitle" class="admin-form-panel__subtitle">왼쪽 목록에서 항목을 선택하면 수정할 수 있습니다.</p>
+          <form id="admin-utility-form" class="admin-editor">
+            <p id="admin-editor-badge" class="admin-editor__badge">새 자료</p>
 
-            <form id="admin-utility-form" class="admin-form">
-              <label class="admin-field">
-                <span class="admin-field__label">프로그램 이름</span>
-                <input id="admin-name" class="admin-field__input" type="text" required maxlength="80" placeholder="예: 화면 캡쳐 도구">
+            <label class="admin-field">
+              <span class="admin-field__label">이름</span>
+              <input id="admin-name" class="admin-field__input" type="text" required maxlength="80" placeholder="프로그램 이름">
+            </label>
+
+            <label class="admin-field">
+              <span class="admin-field__label">설명</span>
+              <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="짧은 설명"></textarea>
+            </label>
+
+            <label class="admin-field">
+              <span class="admin-field__label" id="admin-file-label">파일 <span id="admin-file-required" class="admin-required">*</span></span>
+              <label class="admin-file-btn" id="admin-dropzone">
+                <input id="admin-file" class="admin-file-btn__input" type="file">
+                <span id="admin-file-display">파일 선택</span>
               </label>
+            </label>
 
-              <label class="admin-field">
-                <span class="admin-field__label">
-                  설명
-                  <span id="admin-desc-count" class="admin-char-count">0 / 200</span>
-                </span>
-                <textarea id="admin-description" class="admin-field__input admin-field__textarea" rows="3" required maxlength="200" placeholder="한두 줄로 간단히 설명해 주세요."></textarea>
-              </label>
-
-              <div class="admin-field">
-                <span class="admin-field__label">
-                  파일 업로드
-                  <span id="admin-file-required" class="admin-required">*</span>
-                </span>
-                <label class="admin-dropzone" id="admin-dropzone">
-                  <input id="admin-file" class="admin-dropzone__input" type="file">
-                  <span class="admin-dropzone__icon" aria-hidden="true">↑</span>
-                  <span class="admin-dropzone__text" id="admin-dropzone-text">클릭하거나 파일을 끌어다 놓으세요</span>
-                  <span class="admin-dropzone__hint" id="admin-file-hint">ZIP, EXE 등 (최대 50MB)</span>
-                </label>
-                <p id="admin-current-file" class="admin-current-file" hidden></p>
-              </div>
-
-              <div class="admin-meta-row">
-                <span class="admin-meta-badge">업데이트</span>
-                <span id="admin-updated-at" class="admin-meta-value"></span>
-                <span class="admin-hint admin-meta-hint">저장 시 오늘 날짜로 자동 반영</span>
-              </div>
-
-              <div class="admin-actions">
-                <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
-                <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
-              </div>
-            </form>
-          </div>
+            <div class="admin-editor__actions">
+              <button type="submit" class="btn-download" id="admin-submit-btn">저장</button>
+              <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
+            </div>
+          </form>
         </div>
       </section>
 
