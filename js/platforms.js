@@ -61,13 +61,36 @@
     return m ? m[1] : null;
   }
 
-  /** 공유 링크 → 직접 다운로드 URL (Google Drive) */
+  /** 대용량 파일 바이러스 검사 안내 페이지 우회용 직접 다운로드 URL */
+  function buildGoogleDriveDirectUrl(fileId) {
+    const id = String(fileId || "").trim();
+    if (!id) return "";
+    return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
+  }
+
+  function getDriveDownloadRelayBase() {
+    const relay = String(window.HYOT_FEEDBACK_CONFIG?.relayUrl || "").trim();
+    return relay ? relay.replace(/\/$/, "") : "";
+  }
+
+  /** 방문자 다운로드 — Worker가 있으면 확인 토큰 파싱 후 리다이렉트 */
+  function resolveGoogleDriveDownloadUrl(url) {
+    const id = extractGoogleDriveFileId(url);
+    if (!id) return String(url || "").trim();
+    const relay = getDriveDownloadRelayBase();
+    if (relay) {
+      return `${relay}/drive?id=${encodeURIComponent(id)}`;
+    }
+    return buildGoogleDriveDirectUrl(id);
+  }
+
+  /** 공유 링크 → 저장용 직접 다운로드 URL (Google Drive) */
   function normalizeGoogleDriveUrl(url) {
     const trimmed = String(url || "").trim();
     if (!trimmed) return "";
     const id = extractGoogleDriveFileId(trimmed);
     if (id && !trimmed.includes("/folders/")) {
-      return `https://drive.google.com/uc?export=download&id=${id}`;
+      return buildGoogleDriveDirectUrl(id);
     }
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return trimmed;
@@ -211,6 +234,8 @@
     isHttpDownloadUrl,
     isGoogleDriveUrl,
     extractGoogleDriveFileId,
+    buildGoogleDriveDirectUrl,
+    resolveGoogleDriveDownloadUrl,
     normalizeGoogleDriveUrl,
     hasAnyPlatform,
     hasExternalLink,

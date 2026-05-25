@@ -3,9 +3,12 @@
  */
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+
+const DRIVE_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 const FEEDBACK_BRANCH = "main";
 const STATS_PATH = "data/download-stats.json";
@@ -14,6 +17,13 @@ const STATS_RETRY = 5;
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    if (request.method === "GET" && isDriveDownloadPath(url.pathname)) {
+      const id = url.searchParams.get("id");
+      if (!id) return new Response("missing id", { status: 400 });
+      return handleDriveDownloadRedirect(id);
+    }
+
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: CORS });
     }
@@ -83,6 +93,69 @@ export default {
     }
   },
 };
+
+function isDriveDownloadPath(pathname) {
+  return pathname === "/drive" || pathname.endsWith("/drive");
+}
+
+function sanitizeDriveFileId(raw) {
+  const id = String(raw || "").replace(/[^a-zA-Z0-9_-]/g, "");
+  return id.length >= 10 && id.length <= 64 ? id : null;
+}
+
+function parseDriveConfirmPage(html) {
+  const formBlock =
+    html.match(/<form[^>]*id="download-form"[^>]*>[\s\S]*?<\/form>/i)?.[0] ||
+    html.match(
+      /<form[^>]*action="https:\/\/drive\.usercontent\.google\.com\/download"[^>]*>[\s\S]*?<\/form>/i
+    )?.[0];
+  if (!formBlock) return null;
+
+  const actionMatch = formBlock.match(/action="([^"]+)"/i);
+  const action = (actionMatch?.[1] || "https://drive.usercontent.google.com/download").replace(
+    /&amp;/g,
+    "&"
+  );
+  const params = new URLSearchParams();
+  const inputRe = /<input\b[^>]*>/gi;
+  let m;
+  while ((m = inputRe.exec(formBlock))) {
+    const tag = m[0];
+    if (!/type=["']hidden["']/i.test(tag)) continue;
+    const name = tag.match(/\bname=["']([^"']+)["']/i)?.[1];
+    const value = tag.match(/\bvalue=["']([^"']*)["']/i)?.[1];
+    if (name) params.set(name, (value || "").replace(/&amp;/g, "&"));
+  }
+  if (!params.has("id")) return null;
+  const qs = params.toString();
+  return qs ? `${action}?${qs}` : action;
+}
+
+async function handleDriveDownloadRedirect(fileId) {
+  const id = sanitizeDriveFileId(fileId);
+  if (!id) return new Response("invalid id", { status: 400 });
+
+  const uc = `https://drive.google.com/uc?export=download&id=${id}`;
+  let res = await fetch(uc, {
+    headers: { "User-Agent": DRIVE_UA },
+    redirect: "follow",
+  });
+
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("text/html")) {
+    const html = await res.text();
+    const fromForm = parseDriveConfirmPage(html);
+    if (fromForm) {
+      return Response.redirect(fromForm, 302);
+    }
+    const confirmMatch = html.match(/confirm=([0-9A-Za-z_-]+)/);
+    const confirm = confirmMatch?.[1] || "t";
+    return Response.redirect(`${uc}&confirm=${confirm}`, 302);
+  }
+
+  const finalUrl = res.url || `${uc}&confirm=t`;
+  return Response.redirect(finalUrl, 302);
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {

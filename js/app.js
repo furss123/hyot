@@ -13,6 +13,8 @@ const {
   createFileIcon,
   createUtilityIcon,
   isHttpDownloadUrl,
+  isGoogleDriveUrl,
+  resolveGoogleDriveDownloadUrl,
 } = window.HYOT_PLATFORMS;
 
 const els = {
@@ -169,7 +171,9 @@ function createPlatformButton(item, platform) {
 
     const link = document.createElement("a");
     link.className = `btn-download btn-platform btn-platform--${platform.id}`;
-    link.href = pf.file;
+    link.href = isGoogleDriveUrl(pf.file)
+      ? resolveGoogleDriveDownloadUrl(pf.file)
+      : pf.file;
     const external = isHttpDownloadUrl(pf.file);
     if (!external && pf.fileName) link.download = pf.fileName;
     if (external) {
