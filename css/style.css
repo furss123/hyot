@@ -1748,13 +1748,6 @@ html[data-resolved-theme="dark"] .feedback-board {
   font-weight: 700;
 }
 
-.feedback-board__cta-note {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
 .feedback-compose[hidden] {
   display: none !important;
 }
