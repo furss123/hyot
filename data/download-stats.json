@@ -1,10 +1,26 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-24T00:00:00.000Z",
+  "updatedAt": "2026-05-25T02:32:10.743Z",
   "byId": {
-    "cleanclass-1-2-0": { "total": 0, "windows": 0, "android": 0 },
-    "printgod-1-0-0": { "total": 0, "windows": 0, "android": 0 },
-    "quickcap-1-1-0": { "total": 0, "windows": 0, "android": 0 },
-    "hyot-memory-clean": { "total": 0, "windows": 0, "android": 0 }
+    "cleanclass-1-2-0": {
+      "total": 0,
+      "windows": 0,
+      "android": 0
+    },
+    "printgod-1-0-0": {
+      "total": 0,
+      "windows": 0,
+      "android": 0
+    },
+    "quickcap-1-1-0": {
+      "total": 1,
+      "windows": 1,
+      "android": 0
+    },
+    "hyot-memory-clean": {
+      "total": 0,
+      "windows": 0,
+      "android": 0
+    }
   }
 }
