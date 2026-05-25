@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-25T23:17:05.874Z",
+  "updatedAt": "2026-05-25T23:54:22.011Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -30,6 +30,11 @@
     "quickcap": {
       "total": 3,
       "windows": 3,
+      "android": 0
+    },
+    "printgod": {
+      "total": 1,
+      "windows": 1,
       "android": 0
     }
   }
