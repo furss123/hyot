@@ -647,13 +647,15 @@ a {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 1.4rem;
-  height: 1.4rem;
-  margin: -0.7rem 0 0 -0.7rem;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: -0.675rem 0 0 -0.675rem;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.95);
+  border-right-color: rgba(255, 255, 255, 0.45);
   border-radius: 50%;
-  animation: btn-platform-spin 0.7s linear infinite;
+  animation: btn-platform-spin 1.1s linear infinite;
+  will-change: transform;
 }
 
 .btn-platform.is-downloading .btn-platform__spinner {
