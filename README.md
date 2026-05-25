@@ -86,19 +86,25 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 
 `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.
 
-## 변동 사항 자동 푸시
+## 변동 사항 자동 커밋·푸시 (기본 ON)
 
-로컬에서 수정한 내용을 `main`에 자동으로 올리려면 (최초 1회):
+이 저장소는 **`main`에 자동 커밋·푸시`** 가 켜져 있습니다. Cursor 에이전트 작업이 끝나면 변경 사항이 `origin/main`으로 올라갑니다.
+
+최초 클론·다른 PC에서 한 번만:
 
 ```powershell
 .\scripts\setup-auto-push.ps1
 ```
 
-- **Cursor** 에이전트 작업이 끝날 때 (`.cursor/hooks.json` → `stop`)
-- **git commit** 직후 (`.githooks/post-commit`)
-- 수동: `.\scripts\auto-push.ps1`
+| 시점 | 동작 |
+|------|------|
+| Cursor 에이전트 **작업 종료** | `.cursor/hooks.json` → 커밋(있을 때) + push |
+| `git commit` 직후 | `.githooks/post-commit` → push |
+| 수동 | `.\scripts\auto-push.ps1` |
 
-관리자 패널에서 저장한 변경은 GitHub API로 바로 push되며, 위 스크립트와 별개입니다.
+커밋 메시지를 직접 지정: `.\scripts\auto-push.ps1 -Message "fix: 설명"`
+
+관리자 패널에서 저장한 `data.json` 등은 GitHub API로 바로 반영되며, 위 훅과 별개입니다.
 
 ## 로컬 미리보기
 

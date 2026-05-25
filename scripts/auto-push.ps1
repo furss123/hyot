@@ -30,13 +30,29 @@ if ($branch -ne "main") {
   exit 0
 }
 
+$excludeFromCommit = @(
+  "js/admin-secrets.js",
+  ".env",
+  ".env.local"
+)
+
 if (-not $PushOnly) {
   $status = git status --porcelain
   if ($status) {
     git add -A
-    $commitMsg = if ($Message) { $Message } else { "chore: auto-sync $(Get-Date -Format 'yyyy-MM-dd HH:mm')" }
-    git commit -m $commitMsg
-    Write-Log "committed"
+    foreach ($path in $excludeFromCommit) {
+      if (Test-Path $path) {
+        git reset HEAD -- $path 2>$null | Out-Null
+      }
+    }
+    $staged = git diff --cached --name-only
+    if (-not $staged) {
+      Write-Log "nothing to commit (only excluded files changed)"
+    } else {
+      $commitMsg = if ($Message) { $Message } else { "chore: auto-sync $(Get-Date -Format 'yyyy-MM-dd HH:mm')" }
+      git commit -m $commitMsg
+      Write-Log "committed"
+    }
   } else {
     Write-Log "nothing to commit"
   }

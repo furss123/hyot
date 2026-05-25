@@ -1,0 +1,31 @@
+---
+description: HyoT 작업 완료 시 자동 git commit 및 origin/main push
+alwaysApply: true
+---
+
+# 자동 커밋·푸시 (HyoT)
+
+이 저장소에서는 **작업이 끝나면 항상** 변경 사항을 `origin/main`에 올립니다. 사용자에게 「푸시해 주세요」를 요청하지 않습니다.
+
+## 에이전트가 할 일
+
+1. 구현·수정을 마친 뒤 **미커밋 변경이 있으면** 반드시 실행:
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/auto-push.ps1
+   ```
+2. 사용자가 **명시적으로 커밋 메시지**를 요청한 경우에만 `-Message "..."` 로 전달합니다.
+3. 그 외에는 스크립트 기본 메시지(`chore: auto-sync …`)를 사용합니다.
+4. `main`이 아닌 브랜치에서는 push하지 않습니다 (스크립트가 자동 skip).
+5. rebase/merge 진행 중이면 push하지 않습니다.
+
+## 자동 실행 경로 (이미 설정됨)
+
+- Cursor **stop** 훅: `.cursor/hooks.json` → `.cursor/hooks/run-auto-push.ps1`
+- **post-commit** 훅: `.githooks/post-commit` → push만 수행
+- 수동: `.\scripts\auto-push.ps1`
+
+## 주의
+
+- `.env`, `js/admin-secrets.js` 등 비밀 파일은 커밋하지 않습니다 (gitignore·스크립트 제외 목록 준수).
+- 배포 트리거용 **빈 커밋**은 사용자가 요청할 때만 만듭니다.
+- `git push --force` 등 파괴적 명령은 사용자 요청 없이 사용하지 않습니다.
