@@ -28,7 +28,12 @@
       "id": "hantopip",
       "name": "한투핍 HanToPip",
       "description": "한글(HWP) 파일을 끌어다 놓고 목록에서 순서를 바꾼 뒤, PDF로 한꺼번에 변환하는 도구입니다. 저장 위치·여백·병합/개별 PDF 등을 정한 뒤 일괄 변환할 수 있습니다. (한글이 설치된 Windows에서 사용)",
-      "updatedAt": "2026-05-25T05:49:30.153Z",
+      "updatedAt": "2026-05-25T09:25:54.430Z",
+      "windows": {
+        "file": "https://drive.usercontent.google.com/download?id=1tzvpm6ebkVX2Gp2CLUzeQWALg3iFlg2L&export=download&confirm=t",
+        "fileName": "다운로드",
+        "fileSize": ""
+      },
       "icon": "assets/icons/hantopip-mpksdwo9.png",
       "iconUpdatedAt": "2026-05-25T05:49:30.153Z"
     },
