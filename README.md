@@ -18,7 +18,6 @@ hyot/
 ├── js/admin-config.js      # 공개 저장소 설정
 ├── js/admin-secrets.js     # 로컬 전용 (gitignore)
 ├── data/data.json          # 프로그램 메타데이터 (관리자 편집)
-├── downloads/              # 배포 파일 (.zip, .exe 등)
 ├── assets/favicon.svg
 ├── .github/workflows/      # Pages 자동 배포
 └── .nojekyll
@@ -30,7 +29,7 @@ hyot/
 
 - 아이디·비밀번호는 **GitHub 저장소 Secrets**에만 보관 (소스 코드에 없음)
 - `업데이트` 날짜는 저장 시 **오늘 날짜 자동** 입력
-- [GitHub 토큰](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) (`repo` 권한) — 파일 업로드용
+- [GitHub 토큰](https://github.com/settings/tokens/new?scopes=repo&description=HyoT-admin) (`repo` 권한) — `data.json`·아이콘 저장용
 
 ### GitHub Secrets 설정 (최초 1회)
 
@@ -54,10 +53,13 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 
 `js/admin-secrets.example.js`를 `js/admin-auth.js`로 복사한 뒤 값을 채웁니다.
 
+### 다운로드 파일 (Google Drive)
+
+실행 파일은 **Google Drive**에 올리고, 관리자에서 **공유 링크**를 등록합니다. 저장 시 다운로드용 URL로 자동 변환됩니다.
+
 ### 수동 추가 (JSON 직접 편집)
 
-1. 실행 파일을 `downloads/` 폴더에 넣습니다.
-2. `data/data.json`의 `utilities` 배열에 항목을 추가합니다.
+`data/data.json`의 `utilities` 배열에 항목을 추가할 수 있습니다. 플랫폼별로 `windows` / `android` 객체에 Drive URL을 넣습니다.
 
 ```json
 {
@@ -65,10 +67,11 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
   "name": "프로그램 이름",
   "description": "한두 줄 설명",
   "updatedAt": "2026-05-24",
-  "file": "downloads/my-app.zip",
-  "fileName": "다운로드-파일명.zip",
-  "version": "1.0.0",
-  "fileSize": "2.4 MB"
+  "windows": {
+    "file": "https://drive.google.com/uc?export=download&id=FILE_ID",
+    "fileName": "my-app.zip",
+    "fileSize": "2.4 MB"
+  }
 }
 ```
 
@@ -78,13 +81,10 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 | `name` | ✓ | 카드 제목 |
 | `description` | ✓ | 짧은 설명 (1~2줄) |
 | `updatedAt` | ✓ | `YYYY-MM-DD` |
-| `file` | ✓ | 저장소 기준 경로 (`downloads/...`) |
-| `fileName` | 권장 | 브라우저 저장 시 파일명 |
-| `version` | 선택 | 버전 표시 |
-| `fileSize` | 선택 | 용량 표시 |
+| `windows` / `android` | ✓ (하나 이상) | `file`: https Drive URL, `fileName`, `fileSize` |
 | `icon` | 선택 | 관리자에서 업로드한 카드 아이콘 (`assets/icons/...`) |
 
-3. `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.
+`main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.
 
 ## 변동 사항 자동 푸시
 

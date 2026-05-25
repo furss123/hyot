@@ -36,6 +36,14 @@
   function getPlatformFile(item, platformId) {
     const pf = item?.[platformId];
     if (!pf || typeof pf.file !== "string" || !pf.file.trim()) return null;
+    if (!isHttpDownloadUrl(pf.file)) return null;
+    return pf;
+  }
+
+  /** 관리자 편집용 — 저장소 경로 등 비-URL도 읽기 */
+  function getRawPlatformFile(item, platformId) {
+    const pf = item?.[platformId];
+    if (!pf || typeof pf.file !== "string" || !pf.file.trim()) return null;
     return pf;
   }
 
@@ -199,6 +207,7 @@
     list: PLATFORMS,
     migrateUtility,
     getPlatformFile,
+    getRawPlatformFile,
     isHttpDownloadUrl,
     isGoogleDriveUrl,
     extractGoogleDriveFileId,

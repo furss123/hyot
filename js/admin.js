@@ -18,6 +18,7 @@
     list: PLATFORMS,
     migrateUtility,
     getPlatformFile,
+    getRawPlatformFile,
     normalizeGoogleDriveUrl,
     isHttpDownloadUrl,
     isGoogleDriveUrl,
@@ -52,7 +53,6 @@
     driveUrl: $("admin-drive-url"),
     driveFileName: $("admin-drive-filename"),
     driveFileSize: $("admin-drive-filesize"),
-    driveLegacyHint: $("admin-drive-legacy-hint"),
     icon: $("admin-icon"),
     iconDisplay: $("admin-icon-display"),
     iconPreview: $("admin-icon-preview"),
@@ -127,38 +127,36 @@
     const name = pf.fileName || "다운로드";
     const size = pf.fileSize ? ` (${pf.fileSize})` : "";
     const file = pf.file || "";
-    if (isHttpDownloadUrl(file)) {
-      const label = isGoogleDriveUrl(file) ? "Google Drive" : "외부 링크";
-      return `${name}${size} · ${label}`;
+    if (!isHttpDownloadUrl(file)) {
+      return `${name}${size} · Drive 링크 필요`;
     }
-    return `${name}${size} · GitHub 경로(구)`;
-  }
-
-  function isLegacyPlatformFile(pf) {
-    return Boolean(pf?.file && !isHttpDownloadUrl(pf.file));
+    const label = isGoogleDriveUrl(file) ? "Google Drive" : "외부 링크";
+    return `${name}${size} · ${label}`;
   }
 
   function syncDriveFieldsFromItem(item) {
-    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
-    if (els.driveUrl) els.driveUrl.value = pf?.file || "";
+    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
+    if (els.driveUrl) {
+      els.driveUrl.value = pf?.file && isHttpDownloadUrl(pf.file) ? pf.file : "";
+    }
     if (els.driveFileName) {
       els.driveFileName.value =
-        pf?.fileName || (isLegacyPlatformFile(pf) ? pf.file.split("/").pop() : "") || "";
+        pf?.fileName || (pf?.file && !isHttpDownloadUrl(pf.file) ? pf.file.split("/").pop() : "") || "";
     }
     if (els.driveFileSize) els.driveFileSize.value = pf?.fileSize || "";
   }
 
-  /** 수정: 링크·파일명·용량만 바뀐 경우 / 신규: Drive URL 검증 */
+  /** 수정: Drive URL·표시 정보만 변경 / 신규: Drive URL 검증 */
   function resolvePlatformDataForSave(item) {
     const raw = els.driveUrl?.value?.trim() || "";
     if (!raw) return null;
 
-    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
+    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
     const storedFile = String(pf?.file || "").trim();
     const fileName = els.driveFileName?.value?.trim() || "";
     const fileSize = els.driveFileSize?.value?.trim() || "";
 
-    if (item && pf && raw === storedFile) {
+    if (item && pf && isHttpDownloadUrl(storedFile) && raw === storedFile) {
       const nameSame = fileName === String(pf.fileName || "").trim();
       const sizeSame = fileSize === String(pf.fileSize || "").trim();
       if (nameSame && sizeSame) return null;
@@ -229,7 +227,7 @@
     box.hidden = false;
     box.replaceChildren();
     PLATFORMS.forEach((p) => {
-      const pf = getPlatformFile(item, p.id);
+      const pf = getRawPlatformFile(item, p.id);
       const row = document.createElement("p");
       row.className = `admin-platform-status__row${pf ? "" : " admin-platform-status__row--empty"}`;
       const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -519,7 +517,7 @@
           "파일이 너무 커서 브라우저 업로드가 불가합니다. 「저장소에 파일을 직접 올렸음」을 체크하고 경로로 등록하세요.";
       } else if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
         msg =
-          "GitHub 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하거나 파일 크기를 줄여 다시 업로드하세요.";
+          "GitHub 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.";
       }
       throw new Error(msg);
     }
@@ -739,93 +737,6 @@
     return window.HYOT_PLATFORMS?.utilityIconSrc?.(bustItem) || path;
   }
 
-  function normalizeDownloadPath(input) {
-    let path = String(input || "").trim().replace(/^\/+/, "");
-    if (!path) return "";
-    if (!path.startsWith(`${cfg.downloadsPath}/`)) {
-      path = path.replace(/^downloads\/?/i, "");
-      path = `${cfg.downloadsPath}/${path}`;
-    }
-    return path;
-  }
-
-  async function verifyDownloadFile(path) {
-    const ref = encodeURIComponent(cfg.github.branch);
-    const data = await api(
-      `${repoPath()}/contents/${path}?ref=${ref}`
-    );
-    if (data.type && data.type !== "file") {
-      throw new Error("파일 경로가 올바르지 않습니다. downloads/ 아래 파일을 지정하세요.");
-    }
-    return {
-      path,
-      fileName: path.split("/").pop() || path,
-      fileSize: typeof data.size === "number" ? formatSize(data.size) : "",
-    };
-  }
-
-  async function uploadFileContents(file, onSegmentProgress) {
-    const report = (inner) => onSegmentProgress?.(inner);
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
-    const path = `${cfg.downloadsPath}/${safe}`;
-    let sha = null;
-
-    report(0);
-    try {
-      const ref = encodeURIComponent(cfg.github.branch);
-      const ex = await api(
-        `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${path}?ref=${ref}`
-      );
-      sha = ex.sha;
-    } catch {
-      /* new */
-    }
-    report(12);
-
-    const b64 = await new Promise((ok, no) => {
-      const r = new FileReader();
-      r.onprogress = (e) => {
-        if (e.lengthComputable) {
-          report(12 + (e.loaded / e.total) * 48);
-        }
-      };
-      r.onload = () => {
-        report(62);
-        ok(String(r.result).split(",")[1]);
-      };
-      r.onerror = () => no(r.error);
-      r.readAsDataURL(file);
-    });
-
-    report(68);
-    await api(
-      `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${path}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({
-          message: `upload: ${safe}`,
-          content: b64,
-          branch: cfg.github.branch,
-          ...(sha ? { sha } : {}),
-        }),
-      }
-    );
-    report(100);
-    return {
-      path,
-      fileName: file.name,
-      fileSize: formatSize(file.size),
-    };
-  }
-
-  async function uploadFile(file, onSegmentProgress) {
-    return uploadFileContents(file, onSegmentProgress);
-  }
-
-  function useManualFile() {
-    return Boolean(els.fileManual?.checked);
-  }
-
   function updateIconPreview(path, item) {
     if (!els.iconPreview) return;
     if (path) {
@@ -865,15 +776,15 @@
 
   function updateEditorUI() {
     const item = getItem();
-    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
-    const legacy = isLegacyPlatformFile(pf);
+    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
+    const hasDriveLink = pf && isHttpDownloadUrl(pf.file);
 
     if (item) {
       els.editorBadge.textContent = `수정 · ${item.name}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
-      if (els.fileRequired) els.fileRequired.hidden = !legacy && Boolean(pf);
-      if (els.driveUrl) els.driveUrl.required = legacy || !pf;
+      if (els.fileRequired) els.fileRequired.hidden = hasDriveLink;
+      if (els.driveUrl) els.driveUrl.required = !hasDriveLink;
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
@@ -882,8 +793,6 @@
       if (els.driveUrl) els.driveUrl.required = true;
       updateIconPreview(null);
     }
-
-    if (els.driveLegacyHint) els.driveLegacyHint.hidden = !legacy;
 
     syncDriveFieldsFromItem(item);
     updatePlatformStatus();
@@ -1091,14 +1000,15 @@
       return;
     }
     const editItem = isEdit() ? migrateUtility(getItem()) : null;
-    const editPf = editItem ? getPlatformFile(editItem, getSelectedPlatform()) : null;
+    const editPf = editItem ? getRawPlatformFile(editItem, getSelectedPlatform()) : null;
+    const editHasDrive = editPf && isHttpDownloadUrl(editPf.file);
 
     if (!isEdit() && !driveUrlRaw) {
       toast("Google Drive 다운로드 링크를 입력하세요.", true);
       return;
     }
-    if (isEdit() && !editPf && !driveUrlRaw) {
-      toast("이 플랫폼에 등록된 링크가 없습니다. Google Drive 링크를 입력하세요.", true);
+    if (isEdit() && !editHasDrive && !driveUrlRaw) {
+      toast("Google Drive 다운로드 링크를 입력하세요.", true);
       return;
     }
 
@@ -1129,8 +1039,8 @@
 
       if (isEdit()) {
         const cur = migrateUtility(getItem());
-        let windows = getPlatformFile(cur, "windows");
-        let android = getPlatformFile(cur, "android");
+        let windows = getRawPlatformFile(cur, "windows");
+        let android = getRawPlatformFile(cur, "android");
 
         if (platformDataFromForm) {
           if (platformId === "windows") windows = platformDataFromForm;

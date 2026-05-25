@@ -121,51 +121,6 @@ function setPlatformDownloadLoading(link, loading) {
   }
 }
 
-const DOWNLOAD_PROBE_TIMEOUT_MS = 15000;
-
-async function waitUntilFileReady(url) {
-  const ac = new AbortController();
-  const timer = window.setTimeout(() => ac.abort(), DOWNLOAD_PROBE_TIMEOUT_MS);
-  try {
-    try {
-      const head = await fetch(url, {
-        method: "HEAD",
-        cache: "no-store",
-        credentials: "same-origin",
-        signal: ac.signal,
-      });
-      if (head.ok) return true;
-      if (head.status !== 405 && head.status !== 501) return false;
-    } catch (_) {
-      /* HEAD blocked or unsupported — try range */
-    }
-
-    const range = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-      credentials: "same-origin",
-      signal: ac.signal,
-      headers: { Range: "bytes=0-0" },
-    });
-    return range.ok || range.status === 206;
-  } catch (_) {
-    return false;
-  } finally {
-    window.clearTimeout(timer);
-  }
-}
-
-function triggerPlatformDownload(link) {
-  const a = document.createElement("a");
-  a.href = link.href;
-  if (link.download) a.download = link.download;
-  a.rel = "noopener";
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
 function recordDownloadHit(link) {
   const utilityId = link.dataset.utilityId;
   const platform = link.dataset.platform;
@@ -181,26 +136,10 @@ async function handlePlatformDownloadClick(event) {
   event.preventDefault();
   if (link.classList.contains("is-downloading")) return;
 
-  if (isHttpDownloadUrl(link.href)) {
-    setPlatformDownloadLoading(link, true);
-    window.open(link.href, "_blank", "noopener,noreferrer");
-    recordDownloadHit(link);
-    window.setTimeout(() => setPlatformDownloadLoading(link, false), 480);
-    return;
-  }
-
   setPlatformDownloadLoading(link, true);
-  try {
-    await waitUntilFileReady(link.href);
-    triggerPlatformDownload(link);
-    recordDownloadHit(link);
-  } catch (err) {
-    console.warn("[HyoT] download probe failed, trying direct download:", err);
-    triggerPlatformDownload(link);
-    recordDownloadHit(link);
-  } finally {
-    window.setTimeout(() => setPlatformDownloadLoading(link, false), 320);
-  }
+  window.open(link.href, "_blank", "noopener,noreferrer");
+  recordDownloadHit(link);
+  window.setTimeout(() => setPlatformDownloadLoading(link, false), 480);
 }
 
 function bindPlatformDownloads() {
