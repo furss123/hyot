@@ -536,11 +536,11 @@ a {
   word-break: keep-all;
   overflow-wrap: break-word;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: calc(1.55em * 3);
+  min-height: calc(1.55em * 5);
 }
 
 .utility-card__meta {
