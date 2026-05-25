@@ -1702,7 +1702,7 @@ textarea.admin-field__input {
 
 /* ── Feedback board (main) ───────────────────────────────── */
 .feedback-board {
-  padding: 2.5rem 0 3rem;
+  padding: 1.25rem 0 1.5rem;
   border-top: 1px solid var(--border-glass);
   background: var(--bg-surface-muted);
 }
@@ -1729,8 +1729,8 @@ html[data-resolved-theme="dark"] .feedback-board {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.65rem;
-  padding: 1.5rem 1rem 2rem;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem 1rem;
   text-align: center;
 }
 
