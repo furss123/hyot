@@ -1,5 +1,5 @@
 /**
- * HyoT — 플랫폼(Windows / Android) 공통 정의
+ * HyoT — Windows 다운로드 공통 정의
  */
 (function () {
   const PLATFORMS = [
@@ -8,12 +8,6 @@
       label: "Windows",
       shortLabel: "Win",
       accept: ".exe,.msi,.zip,.7z",
-    },
-    {
-      id: "android",
-      label: "Android",
-      shortLabel: "And",
-      accept: ".apk,.aab",
     },
   ];
 

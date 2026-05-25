@@ -59,7 +59,7 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 
 ### 수동 추가 (JSON 직접 편집)
 
-`data/data.json`의 `utilities` 배열에 항목을 추가할 수 있습니다. 플랫폼별로 `windows` / `android` 객체에 Drive URL을 넣습니다.
+`data/data.json`의 `utilities` 배열에 항목을 추가할 수 있습니다. `windows` 객체에 Drive URL을 넣습니다.
 
 ```json
 {
@@ -81,7 +81,7 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 | `name` | ✓ | 카드 제목 |
 | `description` | ✓ | 짧은 설명 (1~2줄) |
 | `updatedAt` | ✓ | `YYYY-MM-DD` |
-| `windows` / `android` | ✓ (하나 이상) | `file`: https Drive URL, `fileName`, `fileSize` |
+| `windows` | 선택 | `file`: https Drive URL, `fileName`, `fileSize` |
 | `icon` | 선택 | 관리자에서 업로드한 카드 아이콘 (`assets/icons/...`) |
 
 `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.

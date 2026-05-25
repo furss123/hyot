@@ -9,7 +9,7 @@
   <title>관리자 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20260526h">
+  <link rel="stylesheet" href="css/style.css?v=20260527a">
 </head>
 <body>
   <div class="page-bg" aria-hidden="true"></div>
@@ -125,33 +125,12 @@
                 <p class="admin-hint">저장(업로드) 시점의 날짜·시간이 자동으로 기록됩니다.</p>
               </label>
 
-              <fieldset class="admin-field admin-platform-pick" id="admin-platform-pick">
-                <legend class="admin-field__label">등록 플랫폼</legend>
-                <div class="admin-platform-pick__options" role="radiogroup" aria-label="등록 플랫폼">
-                  <label class="admin-platform-option">
-                    <input class="admin-platform-option__input" type="radio" name="admin-platform" value="windows" checked>
-                    <span class="admin-platform-option__face">
-                      <svg class="admin-platform-option__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4V12H3V5.5Zm0 7.5h7.5v7.6L3 19.5V13Zm9.5-8.3L21 3.9v7.6h-8.5V4.7Zm0 9.3H21v7.6l-8.5-1.5V14Z"/></svg>
-                      Windows
-                    </span>
-                  </label>
-                  <label class="admin-platform-option">
-                    <input class="admin-platform-option__input" type="radio" name="admin-platform" value="android">
-                    <span class="admin-platform-option__face">
-                      <svg class="admin-platform-option__icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8.2 3c.4 1.1.9 2.1 1.6 3.1-.9.3-1.8.8-2.5 1.4C6.4 5.8 5.5 4.5 5 3h3.2ZM16 3c-.5 1.5-1.4 2.8-2.3 3.9-.7-.6-1.6-1.1-2.5-1.4.7-1 1.2-2 1.6-3.1H16ZM7 8.2c1.2-.2 2.4-.2 3.6 0 1.2.2 2.3.6 3.4 1.2-1 .8-2.2 1.3-3.4 1.6-1.2.3-2.4.3-3.6 0-1.2-.3-2.4-.8-3.4-1.6 1.1-.6 2.2-1 3.4-1.2Zm-2.1 3.4c1 .9 2.2 1.5 3.5 1.8v5.1c-1.2-.4-2.2-1-3-1.9-.9-.9-1.5-2-1.8-3.2.5-.6 1-1.1 1.3-1.8Zm10.2 1.8c-.3 1.2-.9 2.3-1.8 3.2-.8.9-1.8 1.5-3 1.9v-5.1c1.3-.3 2.5-.9 3.5-1.8.3.7.8 1.2 1.3 1.8ZM12 14.8c1.2-.4 2.2-1 3-1.9.5 1.4.5 2.9 0 4.3-.8.4-1.7.6-2.6.7-.9.1-1.8.1-2.7 0-.9-.1-1.8-.3-2.6-.7-.5-1.4-.5-2.9 0-4.3.8.9 1.8 1.5 3 1.9Z"/></svg>
-                      Android
-                    </span>
-                  </label>
-                </div>
-                <p class="admin-hint">선택한 플랫폼의 Google Drive 링크만 등록·수정됩니다. 다른 플랫폼 링크는 유지됩니다.</p>
-              </fieldset>
-
               <div id="admin-platform-status" class="admin-platform-status" hidden aria-live="polite"></div>
 
               <div class="admin-field admin-drive-fields">
                 <label class="admin-field">
                   <span class="admin-field__label" id="admin-file-label">
-                    Google Drive 다운로드 <span class="admin-optional">(선택)</span>
+                    Windows · Google Drive <span class="admin-optional">(선택)</span>
                     <span id="admin-file-required" class="admin-required" hidden>*</span>
                   </span>
                   <input
@@ -237,8 +216,8 @@
   <script src="js/feedback-auth.js"></script>
   <script src="js/feedback-github.js"></script>
   <script src="js/admin-auth.js"></script>
-  <script src="js/platforms.js?v=20260526d"></script>
-  <script src="js/admin.js?v=20260526f" defer></script>
+  <script src="js/platforms.js?v=20260527a"></script>
+  <script src="js/admin.js?v=20260527a" defer></script>
   <script src="js/admin-feedback.js" defer></script>
   <script src="js/admin-feedback-github.js?v=20260529" defer></script>
 </body>

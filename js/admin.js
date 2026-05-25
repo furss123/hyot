@@ -60,8 +60,6 @@
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
     platformStatus: $("admin-platform-status"),
-    platformRadios: () =>
-      document.querySelectorAll('input[name="admin-platform"]'),
   };
 
   let catalogData = null;
@@ -114,8 +112,7 @@
   };
 
   function getSelectedPlatform() {
-    const checked = document.querySelector('input[name="admin-platform"]:checked');
-    return checked?.value === "android" ? "android" : "windows";
+    return "windows";
   }
 
   function getPlatformMeta(platformId) {
@@ -250,7 +247,7 @@
     });
   }
 
-  function buildUtilityPayload(base, { name, description, updatedAt, windows, android, icon, iconUpdatedAt }) {
+  function buildUtilityPayload(base, { name, description, updatedAt, windows, icon, iconUpdatedAt }) {
     const out = {
       id: base.id,
       name,
@@ -258,7 +255,6 @@
       updatedAt,
     };
     if (windows) out.windows = windows;
-    if (android) out.android = android;
     const iconPath = icon != null && icon !== "" ? icon : base?.icon;
     if (iconPath) out.icon = iconPath;
     if (iconUpdatedAt) out.iconUpdatedAt = iconUpdatedAt;
@@ -573,7 +569,6 @@
     if (!row) return `다운로드 ${formatDownloadCount(total)}회`;
     const parts = [];
     if (row.windows) parts.push(`Windows ${formatDownloadCount(row.windows)}`);
-    if (row.android) parts.push(`Android ${formatDownloadCount(row.android)}`);
     const detail = parts.length ? parts.join(" · ") : "플랫폼별 기록 없음";
     return `다운로드 ${formatDownloadCount(total)}회 (${detail})`;
   }
@@ -891,10 +886,6 @@
     toast("");
   }
 
-  function onPlatformChange() {
-    updateEditorUI();
-  }
-
   async function load() {
     const [{ json }, stats] = await Promise.all([readJson(), loadDownloadStats()]);
     downloadStatsById = stats;
@@ -1020,18 +1011,13 @@
       const updatedAt = nowISO();
       let nextId = selectedId;
 
-      const platformId = getSelectedPlatform();
-      const platformLabel = getPlatformMeta(platformId)?.label || platformId;
+      const platformLabel = getPlatformMeta("windows")?.label || "Windows";
 
       if (isEdit()) {
         const cur = migrateUtility(getItem());
         let windows = getRawPlatformFile(cur, "windows");
-        let android = getRawPlatformFile(cur, "android");
 
-        if (platformDataFromForm) {
-          if (platformId === "windows") windows = platformDataFromForm;
-          else android = platformDataFromForm;
-        }
+        if (platformDataFromForm) windows = platformDataFromForm;
 
         progress.set(50);
         const iconResult = await resolveIconForSave({ base: cur, utilityId: cur.id });
@@ -1042,7 +1028,6 @@
           description: desc,
           updatedAt,
           windows,
-          android,
           icon: iconResult.path,
           ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
         });
@@ -1063,8 +1048,7 @@
               name,
               description: desc,
               updatedAt,
-              windows: platformId === "windows" ? platformDataFromForm : null,
-              android: platformId === "android" ? platformDataFromForm : null,
+              windows: platformDataFromForm,
               icon: iconResult.path,
               ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
             }
@@ -1161,10 +1145,6 @@
   els.form.addEventListener("submit", onSave);
   els.deleteBtn.addEventListener("click", onDelete);
   els.icon?.addEventListener("change", onIconPick);
-  document.querySelectorAll('input[name="admin-platform"]').forEach((radio) => {
-    radio.addEventListener("change", onPlatformChange);
-  });
-
   async function init() {
     applyRememberPreferences();
     setView("login");
