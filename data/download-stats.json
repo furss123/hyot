@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-25T08:45:21.352Z",
+  "updatedAt": "2026-05-25T11:04:42.746Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -25,6 +25,11 @@
     "item-1779684951650": {
       "total": 5,
       "windows": 5,
+      "android": 0
+    },
+    "quickcap": {
+      "total": 1,
+      "windows": 1,
       "android": 0
     }
   }
