@@ -776,23 +776,19 @@
 
   function updateEditorUI() {
     const item = getItem();
-    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
-    const hasDriveLink = pf && isHttpDownloadUrl(pf.file);
 
     if (item) {
       els.editorBadge.textContent = `수정 · ${item.name}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
-      if (els.fileRequired) els.fileRequired.hidden = hasDriveLink;
-      if (els.driveUrl) els.driveUrl.required = !hasDriveLink;
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
       els.deleteBtn.hidden = true;
-      if (els.fileRequired) els.fileRequired.hidden = false;
-      if (els.driveUrl) els.driveUrl.required = true;
       updateIconPreview(null);
     }
+    if (els.fileRequired) els.fileRequired.hidden = true;
+    if (els.driveUrl) els.driveUrl.required = false;
 
     syncDriveFieldsFromItem(item);
     updatePlatformStatus();
@@ -1000,26 +996,16 @@
       return;
     }
     const editItem = isEdit() ? migrateUtility(getItem()) : null;
-    const editPf = editItem ? getRawPlatformFile(editItem, getSelectedPlatform()) : null;
-    const editHasDrive = editPf && isHttpDownloadUrl(editPf.file);
-
-    if (!isEdit() && !driveUrlRaw) {
-      toast("Google Drive 다운로드 링크를 입력하세요.", true);
-      return;
-    }
-    if (isEdit() && !editHasDrive && !driveUrlRaw) {
-      toast("Google Drive 다운로드 링크를 입력하세요.", true);
-      return;
-    }
-
     let platformDataFromForm = null;
-    if (driveUrlRaw || isEdit()) {
+    if (driveUrlRaw) {
       try {
         platformDataFromForm = resolvePlatformDataForSave(editItem);
       } catch (err) {
         toast(err.message, true);
         return;
       }
+    } else if (isEdit()) {
+      platformDataFromForm = resolvePlatformDataForSave(editItem);
     }
 
     const progress = beginSaveProgress();
@@ -1063,7 +1049,9 @@
         nextId = cur.id;
       } else {
         progress.set(35);
-        let id = slugFromFileName(platformDataFromForm.fileName);
+        let id = slugFromFileName(
+          platformDataFromForm?.fileName || els.driveFileName?.value?.trim() || name
+        );
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
         const iconResult = await resolveIconForSave({ base: {}, utilityId: id });

@@ -1535,6 +1535,11 @@ textarea.admin-field__input {
   color: var(--accent-coral);
 }
 
+.admin-optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .admin-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
