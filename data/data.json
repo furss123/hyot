@@ -15,7 +15,12 @@
       "id": "printgod",
       "name": "인쇄갓 PrintGod",
       "description": "HWP·HWPX 문서 여러 개를 한 번에 인쇄 대기열에 넣고, 문서마다 다른 인쇄 설정(용지·여백·범위 등)을 적용해 출력할 수 있습니다. 시험지·자료 인쇄를 반복할 때 편합니다.",
-      "updatedAt": "2026-05-25T05:50:14.643Z",
+      "updatedAt": "2026-05-25T09:25:37.139Z",
+      "windows": {
+        "file": "https://drive.usercontent.google.com/download?id=1GixmdKJ51rYfIJ89rUZNa5ElUuJS97Wk&export=download&confirm=t",
+        "fileName": "다운로드",
+        "fileSize": ""
+      },
       "icon": "assets/icons/printgod-mpksev04.png",
       "iconUpdatedAt": "2026-05-25T05:50:14.643Z"
     },
