@@ -4,5 +4,19 @@
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
   },
-  "utilities": []
+  "utilities": [
+    {
+      "id": "item-1779684951650",
+      "name": "램쉼 RamShim",
+      "description": "sdfsdf",
+      "updatedAt": "2026-05-25T04:55:51.650Z",
+      "windows": {
+        "file": "https://drive.google.com/uc?export=download&id=1ZMsSOBzBwBX61Rqw-yezZ1jPz0ZSrLPB",
+        "fileName": "다운로드",
+        "fileSize": ""
+      },
+      "icon": "assets/icons/item-1779684951650-mpkqgx9f.png",
+      "iconUpdatedAt": "2026-05-25T04:55:51.650Z"
+    }
+  ]
 }
