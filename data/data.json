@@ -4,18 +4,5 @@
     "tagline": "업무용 유틸리티 · 로그인 없이 무료 다운로드",
     "description": "관리자가 검증한 유틸리티를 한곳에서 받아보세요. 회원가입 없이 클릭 한 번으로 바로 다운로드됩니다."
   },
-  "utilities": [
-    {
-      "id": "quickcap-1-1-0",
-      "name": "퀵캡 QuickCap",
-      "description": "Win+Shift+S로 캡처한 화면을 바로 편집·저장하는 스크린샷 도구입니다. 형광펜·도형·텍스트·AI 배경 제거를 지원합니다.",
-      "updatedAt": "2026-05-25T03:15:53.424Z",
-      "windows": {
-        "file": "downloads/QuickCap-1.1.4.exe",
-        "fileName": "QuickCap-1.1.4.exe",
-        "fileSize": "81.5 MB"
-      },
-      "icon": "assets/icons/quickcap-1-1-0.png"
-    }
-  ]
+  "utilities": []
 }
