@@ -5,6 +5,7 @@
   const STORAGE_KEY = "hyot_theme";
   const VALID = new Set(["system", "light", "dark"]);
   const META_COLORS = { light: "#eceef5", dark: "#0c0f1a" };
+  const DARK_MQ = window.matchMedia("(prefers-color-scheme: dark)");
 
   function normalize(mode) {
     return VALID.has(mode) ? mode : "system";
@@ -14,39 +15,39 @@
     return normalize(localStorage.getItem(STORAGE_KEY) || "system");
   }
 
-  function systemPrefersDark() {
-    const darkMq = window.matchMedia("(prefers-color-scheme: dark)");
-    if (darkMq.matches) return true;
-    const lightMq = window.matchMedia("(prefers-color-scheme: light)");
-    if (lightMq.matches) return false;
-    return false;
+  function getSystemTheme() {
+    return DARK_MQ.matches ? "dark" : "light";
   }
 
-  function resolvedTheme(mode) {
-    if (mode === "light") return "light";
-    if (mode === "dark") return "dark";
-    return systemPrefersDark() ? "dark" : "light";
+  /** 화면에 실제로 보여 줄 테마 */
+  function getEffectiveTheme(mode) {
+    const value = normalize(mode);
+    if (value === "light") return "light";
+    if (value === "dark") return "dark";
+    return getSystemTheme();
   }
 
-  function updateMetaThemeColor(mode) {
-    const resolved = resolvedTheme(mode);
+  function updateMetaThemeColor(resolved) {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", META_COLORS[resolved]);
+    if (meta) meta.setAttribute("content", META_COLORS[resolved] || META_COLORS.dark);
   }
 
-  function applyResolved(mode) {
-    const resolved = resolvedTheme(mode);
+  function applyToDocument(mode) {
+    const value = normalize(mode);
+    const resolved = getEffectiveTheme(value);
     const root = document.documentElement;
+
+    root.setAttribute("data-theme", value);
     root.setAttribute("data-resolved-theme", resolved);
-    root.style.colorScheme = mode === "system" ? "light dark" : resolved;
+    root.style.colorScheme = value === "system" ? "light dark" : resolved;
+
+    updateMetaThemeColor(resolved);
+    return { value, resolved };
   }
 
   function applyTheme(mode) {
-    const value = normalize(mode);
-    document.documentElement.setAttribute("data-theme", value);
+    const { value } = applyToDocument(mode);
     localStorage.setItem(STORAGE_KEY, value);
-    applyResolved(value);
-    updateMetaThemeColor(value);
     syncControls(value);
   }
 
@@ -60,6 +61,21 @@
     });
   }
 
+  function onSystemPreferenceChange() {
+    if (getStored() !== "system") return;
+    applyToDocument("system");
+  }
+
+  function watchSystemPreference() {
+    if (typeof DARK_MQ.addEventListener === "function") {
+      DARK_MQ.addEventListener("change", onSystemPreferenceChange);
+      return;
+    }
+    if (typeof DARK_MQ.addListener === "function") {
+      DARK_MQ.addListener(onSystemPreferenceChange);
+    }
+  }
+
   function bindControls() {
     const root = document.querySelector("[data-theme-switch]");
     if (!root || root.dataset.bound === "1") return;
@@ -70,15 +86,9 @@
       if (!btn || !root.contains(btn)) return;
       applyTheme(btn.getAttribute("data-theme-value"));
     });
-
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-      if (getStored() === "system") {
-        applyResolved("system");
-        updateMetaThemeColor("system");
-      }
-    });
   }
 
+  watchSystemPreference();
   applyTheme(getStored());
 
   if (document.readyState === "loading") {
@@ -87,5 +97,10 @@
     bindControls();
   }
 
-  window.HyotTheme = { apply: applyTheme, get: getStored };
+  window.HyotTheme = {
+    apply: applyTheme,
+    get: getStored,
+    getEffective: () => getEffectiveTheme(getStored()),
+    refreshSystem: onSystemPreferenceChange,
+  };
 })();
