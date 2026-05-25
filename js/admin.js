@@ -52,6 +52,7 @@
     driveUrl: $("admin-drive-url"),
     driveFileName: $("admin-drive-filename"),
     driveFileSize: $("admin-drive-filesize"),
+    driveLegacyHint: $("admin-drive-legacy-hint"),
     icon: $("admin-icon"),
     iconDisplay: $("admin-icon-display"),
     iconPreview: $("admin-icon-preview"),
@@ -133,11 +134,42 @@
     return `${name}${size} · GitHub 경로(구)`;
   }
 
+  function isLegacyPlatformFile(pf) {
+    return Boolean(pf?.file && !isHttpDownloadUrl(pf.file));
+  }
+
   function syncDriveFieldsFromItem(item) {
     const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
     if (els.driveUrl) els.driveUrl.value = pf?.file || "";
-    if (els.driveFileName) els.driveFileName.value = pf?.fileName || "";
+    if (els.driveFileName) {
+      els.driveFileName.value =
+        pf?.fileName || (isLegacyPlatformFile(pf) ? pf.file.split("/").pop() : "") || "";
+    }
     if (els.driveFileSize) els.driveFileSize.value = pf?.fileSize || "";
+  }
+
+  /** 수정: 링크·파일명·용량만 바뀐 경우 / 신규: Drive URL 검증 */
+  function resolvePlatformDataForSave(item) {
+    const raw = els.driveUrl?.value?.trim() || "";
+    if (!raw) return null;
+
+    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
+    const storedFile = String(pf?.file || "").trim();
+    const fileName = els.driveFileName?.value?.trim() || "";
+    const fileSize = els.driveFileSize?.value?.trim() || "";
+
+    if (item && pf && raw === storedFile) {
+      const nameSame = fileName === String(pf.fileName || "").trim();
+      const sizeSame = fileSize === String(pf.fileSize || "").trim();
+      if (nameSame && sizeSame) return null;
+      return {
+        file: storedFile,
+        fileName: fileName || pf.fileName || "다운로드",
+        fileSize: fileSize || pf.fileSize || "",
+      };
+    }
+
+    return buildPlatformDataFromDriveForm();
   }
 
   function buildPlatformDataFromDriveForm() {
@@ -833,12 +865,15 @@
 
   function updateEditorUI() {
     const item = getItem();
+    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
+    const legacy = isLegacyPlatformFile(pf);
+
     if (item) {
       els.editorBadge.textContent = `수정 · ${item.name}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
-      if (els.fileRequired) els.fileRequired.hidden = true;
-      if (els.driveUrl) els.driveUrl.required = false;
+      if (els.fileRequired) els.fileRequired.hidden = !legacy && Boolean(pf);
+      if (els.driveUrl) els.driveUrl.required = legacy || !pf;
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
@@ -847,6 +882,9 @@
       if (els.driveUrl) els.driveUrl.required = true;
       updateIconPreview(null);
     }
+
+    if (els.driveLegacyHint) els.driveLegacyHint.hidden = !legacy;
+
     syncDriveFieldsFromItem(item);
     updatePlatformStatus();
     refreshUpdatedAtField();
@@ -1052,15 +1090,22 @@
       toast("이름과 설명을 입력하세요.", true);
       return;
     }
+    const editItem = isEdit() ? migrateUtility(getItem()) : null;
+    const editPf = editItem ? getPlatformFile(editItem, getSelectedPlatform()) : null;
+
     if (!isEdit() && !driveUrlRaw) {
       toast("Google Drive 다운로드 링크를 입력하세요.", true);
       return;
     }
+    if (isEdit() && !editPf && !driveUrlRaw) {
+      toast("이 플랫폼에 등록된 링크가 없습니다. Google Drive 링크를 입력하세요.", true);
+      return;
+    }
 
     let platformDataFromForm = null;
-    if (driveUrlRaw) {
+    if (driveUrlRaw || isEdit()) {
       try {
-        platformDataFromForm = buildPlatformDataFromDriveForm();
+        platformDataFromForm = resolvePlatformDataForSave(editItem);
       } catch (err) {
         toast(err.message, true);
         return;
