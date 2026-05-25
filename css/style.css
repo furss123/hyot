@@ -665,7 +665,7 @@ a {
   display: block;
   width: 100%;
   height: 100%;
-  animation: btn-platform-spin 1.75s linear infinite;
+  animation: btn-platform-spin 8.75s linear infinite;
   transform-origin: 50% 50%;
 }
 
@@ -696,7 +696,7 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .btn-platform__spinner-svg {
-    animation-duration: 2.4s;
+    animation-duration: 12s;
   }
 }
 
