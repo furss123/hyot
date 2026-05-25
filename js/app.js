@@ -93,10 +93,15 @@ function getDownloadFileName(item, platform, pf) {
 }
 
 function createDownloadSpinner() {
-  const spinner = document.createElement("span");
-  spinner.className = "btn-platform__spinner";
-  spinner.setAttribute("aria-hidden", "true");
-  return spinner;
+  const wrap = document.createElement("span");
+  wrap.className = "btn-platform__spinner";
+  wrap.setAttribute("aria-hidden", "true");
+  wrap.innerHTML =
+    '<svg class="btn-platform__spinner-svg" viewBox="0 0 20 20" focusable="false">' +
+    '<circle class="btn-platform__spinner-track" cx="10" cy="10" r="7.25" />' +
+    '<circle class="btn-platform__spinner-arc" cx="10" cy="10" r="7.25" />' +
+    "</svg>";
+  return wrap;
 }
 
 function setPlatformDownloadLoading(link, loading) {
