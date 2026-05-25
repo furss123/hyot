@@ -102,14 +102,14 @@
     return typeof item?.link === "string" && item.link.trim().length > 0;
   }
 
+  /** 메인·피드백 목록 표시 — Drive 링크 없어도 카드에 노출(다운로드는 준비 중) */
   function isValidUtility(item) {
     return (
       item &&
       typeof item.id === "string" &&
       typeof item.name === "string" &&
       typeof item.description === "string" &&
-      typeof item.updatedAt === "string" &&
-      (hasAnyPlatform(item) || hasExternalLink(item))
+      typeof item.updatedAt === "string"
     );
   }
 

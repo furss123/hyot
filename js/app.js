@@ -56,7 +56,7 @@ function normalizeUtilities(raw = []) {
   const valid = migrated.filter(isValidUtility);
   const skipped = raw.length - valid.length;
   if (skipped > 0) {
-    console.warn(`[HyoT] ${skipped}개 항목이 필수 필드 누락으로 제외되었습니다.`);
+    console.warn(`[HyoT] ${skipped}개 항목이 이름·설명 등 필수 정보 누락으로 제외되었습니다.`);
   }
   return sortByUpdatedAt(valid);
 }
