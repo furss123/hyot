@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 jobs:
   deploy:
@@ -14,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: false
 
       - name: Inject admin credentials (not stored in main branch)
         run: |
@@ -85,8 +88,9 @@ jobs:
           FEEDBACK_INGEST_KEY: ${{ secrets.FEEDBACK_INGEST_KEY }}
           HYOT_FEEDBACK_RELAY_URL: ${{ secrets.HYOT_FEEDBACK_RELAY_URL }}
 
-      - name: Exclude admin-only feedback data from public site
+      - name: Exclude admin-only and legacy binary paths from public site
         run: |
+          rm -rf downloads
           rm -f data/feedback.json
           rm -f data/download-stats.json
           rm -rf feedback-attachments
@@ -98,5 +102,5 @@ jobs:
           publish_dir: .
           publish_branch: gh-pages
           exclude_assets: .github
-          force_orphan: false
+          force_orphan: true
           enable_jekyll: false
