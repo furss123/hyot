@@ -1702,9 +1702,15 @@ textarea.admin-field__input {
 
 /* ── Feedback board (main) ───────────────────────────────── */
 .feedback-board {
-  padding: 1.25rem 0 1.5rem;
+  padding: 0.85rem 0 1rem;
   border-top: 1px solid var(--border-glass);
   background: var(--bg-surface-muted);
+}
+
+.feedback-board > .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 html[data-resolved-theme="dark"] .feedback-board {
@@ -1729,8 +1735,8 @@ html[data-resolved-theme="dark"] .feedback-board {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.75rem 1rem 1rem;
+  width: 100%;
+  padding: 0.5rem 1rem 0.65rem;
   text-align: center;
 }
 
