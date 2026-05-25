@@ -283,9 +283,13 @@
       return;
     }
     try {
-      const res = await fetch(cfg.catalogPath || "data/data.json", { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = window.HYOT_CATALOG_SYNC
+        ? await window.HYOT_CATALOG_SYNC.fetchCatalog({ cacheBust: Date.now() })
+        : await (async () => {
+            const res = await fetch(cfg.catalogPath || "data/data.json", { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })();
       const utilities = (data.utilities || []).map(migrateUtility).filter(isValidUtility);
       buildUtilityTargets(utilities);
     } catch (err) {
@@ -294,6 +298,8 @@
       setStatus("프로그램 목록을 불러오지 못했습니다.", true);
     }
   }
+
+  window.HYOT_CATALOG_SYNC?.subscribeCatalogUpdates?.(loadCatalog);
 
   function validateForm() {
     const utilityKey = els.utility?.value || "";

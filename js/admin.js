@@ -540,6 +540,10 @@
     return readRepoJson(cfg.dataPath, branch);
   }
 
+  function notifyMainCatalogSync(catalog) {
+    window.HYOT_CATALOG_SYNC?.notifyCatalogUpdated?.(catalog);
+  }
+
   function isNotFoundError(err) {
     return /오류\s*404|not\s*found/i.test(String(err?.message || err));
   }
@@ -604,15 +608,23 @@
   /** 최신 SHA를 읽어 저장. 동시 수정·자동 push 등으로 SHA가 바뀌면 재시도 */
   async function persistCatalogChange(mutator, message, maxAttempts = 5) {
     let lastErr;
-    let nextForUi = null;
+    let saved = null;
     const branches = deployBranches();
     for (const branch of branches) {
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-          const { json, sha } = await readJson(branch);
-          const next = mutator(json);
+          let json;
+          let sha;
+          try {
+            ({ json, sha } = await readRepoJson(cfg.dataPath, branch));
+          } catch (err) {
+            if (!isNotFoundError(err)) throw err;
+            json = saved || catalogData || { utilities: [] };
+            sha = null;
+          }
+          const next = saved && branch !== cfg.github.branch ? saved : mutator(json);
           await writeJson(next, sha, message, branch);
-          if (branch === cfg.github.branch) nextForUi = next;
+          if (!saved) saved = next;
           break;
         } catch (err) {
           lastErr = err;
@@ -621,8 +633,9 @@
         }
       }
     }
-    if (!nextForUi && lastErr) throw lastErr;
-    return nextForUi;
+    if (!saved && lastErr) throw lastErr;
+    if (saved) notifyMainCatalogSync(saved);
+    return saved;
   }
 
   function repoPath() {
@@ -1059,15 +1072,22 @@
 
       progress.set(78);
       const listToSave = list;
-      await persistCatalogChange(
+      const savedCatalog = await persistCatalogChange(
         (fresh) => ({ ...fresh, utilities: listToSave }),
         isEdit() ? `update: ${name}` : `add: ${name}`
       );
       progress.set(90);
       selectedId = nextId;
+      if (savedCatalog) {
+        catalogData = {
+          ...savedCatalog,
+          utilities: savedCatalog.utilities.map(migrateUtility),
+        };
+        renderList();
+      }
 
       const actionLabel = isEdit() ? "저장" : "등록";
-      toast(`「${name}」 ${actionLabel} 완료 (${platformLabel}). 메인 화면으로 이동합니다…`);
+      toast(`「${name}」 ${actionLabel} 완료 (${platformLabel}). 메인에 반영되었습니다.`);
       progress.complete();
       await new Promise((r) => setTimeout(r, 550));
       goToMain = true;

@@ -2,7 +2,7 @@
  * HyoT의 자료실 — 방문자 화면
  */
 
-const DATA_URL = "data/data.json";
+const catalogSync = window.HYOT_CATALOG_SYNC;
 const {
   list: PLATFORMS,
   migrateUtility,
@@ -288,7 +288,7 @@ function showSavedFromAdminHint() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("saved") !== "1") return;
   savedFromAdmin = true;
-  setStatus("자료가 저장되었습니다. GitHub Pages 반영까지 1~2분 걸릴 수 있습니다.");
+  setStatus("자료가 저장되었습니다. 목록을 갱신했습니다.");
 }
 
 function clearSavedFromAdminQuery() {
@@ -298,20 +298,22 @@ function clearSavedFromAdminQuery() {
   window.history.replaceState(null, "", clean.pathname + clean.search + clean.hash);
 }
 
-async function init() {
-  bindPlatformDownloads();
-  showSavedFromAdminHint();
-  if (!savedFromAdmin) setStatus("자료 목록을 불러오는 중…");
+async function loadCatalog(options = {}) {
+  const quiet = Boolean(options.quiet);
+  if (!quiet && !savedFromAdmin) setStatus("자료 목록을 불러오는 중…");
 
   try {
-    const res = await fetch(DATA_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const data = await res.json();
+    const data = catalogSync
+      ? await catalogSync.fetchCatalog({ cacheBust: Date.now() })
+      : await (async () => {
+          const res = await fetch("data/data.json", { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })();
     applySiteMeta(data.site);
     allUtilities = normalizeUtilities(data.utilities);
     renderUtilities(allUtilities);
-    if (!savedFromAdmin) setStatus("");
+    if (!quiet && !savedFromAdmin) setStatus("");
     clearSavedFromAdminQuery();
   } catch (err) {
     console.error("[HyoT] data load failed:", err);
@@ -320,5 +322,12 @@ async function init() {
   }
 }
 
+async function init() {
+  bindPlatformDownloads();
+  showSavedFromAdminHint();
+  await loadCatalog();
+}
+
 init();
-window.HyotApp = { refresh: init };
+catalogSync?.subscribeCatalogUpdates?.(() => loadCatalog({ quiet: true }));
+window.HyotApp = { refresh: () => loadCatalog() };
