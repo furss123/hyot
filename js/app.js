@@ -23,7 +23,6 @@ const els = {
   status: document.getElementById("status"),
   grid: document.getElementById("utility-grid"),
   empty: document.getElementById("empty-state"),
-  footerYear: document.getElementById("footer-year"),
 };
 
 let allUtilities = [];
@@ -300,7 +299,6 @@ function clearSavedFromAdminQuery() {
 }
 
 async function init() {
-  els.footerYear.textContent = String(new Date().getFullYear());
   bindPlatformDownloads();
   showSavedFromAdminHint();
   if (!savedFromAdmin) setStatus("자료 목록을 불러오는 중…");
