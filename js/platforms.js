@@ -92,12 +92,22 @@
     return typeof path === "string" && path.trim() ? path.trim() : "";
   }
 
+  /** 아이콘 교체 후에도 캐시된 이전 이미지가 보이지 않도록 버전 쿼리 부여 */
+  function utilityIconSrc(item) {
+    const path = getUtilityIconPath(item);
+    if (!path) return "";
+    const version = item?.iconUpdatedAt || item?.updatedAt;
+    if (!version) return path;
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}v=${encodeURIComponent(version)}`;
+  }
+
   function createUtilityIcon(item, className = "file-icon") {
     const path = getUtilityIconPath(item);
     if (path) {
       const img = document.createElement("img");
       img.className = `${className} utility-icon utility-icon--custom`;
-      img.src = path;
+      img.src = utilityIconSrc(item);
       img.alt = "";
       img.loading = "lazy";
       img.decoding = "async";
@@ -166,6 +176,7 @@
     createFileIcon,
     createUtilityIcon,
     getUtilityIconPath,
+    utilityIconSrc,
     getCardFileKind,
     getFileKindFromPlatformFile,
   };

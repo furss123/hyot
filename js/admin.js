@@ -168,7 +168,7 @@
     });
   }
 
-  function buildUtilityPayload(base, { name, description, updatedAt, windows, android, icon }) {
+  function buildUtilityPayload(base, { name, description, updatedAt, windows, android, icon, iconUpdatedAt }) {
     const out = {
       id: base.id,
       name,
@@ -177,7 +177,10 @@
     };
     if (windows) out.windows = windows;
     if (android) out.android = android;
-    if (icon) out.icon = icon;
+    const iconPath = icon != null && icon !== "" ? icon : base?.icon;
+    if (iconPath) out.icon = iconPath;
+    if (iconUpdatedAt) out.iconUpdatedAt = iconUpdatedAt;
+    else if (base?.iconUpdatedAt) out.iconUpdatedAt = base.iconUpdatedAt;
     return out;
   }
 
@@ -526,7 +529,28 @@
         .replace(/[^a-z0-9-]/g, "")
         .slice(0, 48) || `item-${Date.now()}`;
     const ext = iconExtFromName(fileName);
-    return `${cfg.iconsPath || "assets/icons"}/${safeId}.${ext}`;
+    const stamp = Date.now().toString(36);
+    return `${cfg.iconsPath || "assets/icons"}/${safeId}-${stamp}.${ext}`;
+  }
+
+  async function deleteRepoFile(path, message) {
+    for (const branch of deployBranches()) {
+      try {
+        const ref = encodeURIComponent(branch);
+        const ex = await api(`${repoPath()}/contents/${path}?ref=${ref}`);
+        if (!ex?.sha) continue;
+        await api(`${repoPath()}/contents/${path}`, {
+          method: "DELETE",
+          body: JSON.stringify({
+            message: branch === cfg.github.branch ? message : `${message} (${branch})`,
+            sha: ex.sha,
+            branch,
+          }),
+        });
+      } catch {
+        /* 파일 없음 또는 이미 삭제됨 */
+      }
+    }
   }
 
   async function fileToBase64(file, onProgress) {
@@ -577,8 +601,20 @@
 
   async function resolveIconForSave({ base, utilityId }) {
     const iconFile = els.icon?.files?.[0];
-    if (iconFile) return (await uploadIconFile(iconFile, utilityId)).path;
-    return base?.icon || null;
+    if (!iconFile) return { path: base?.icon || null, changed: false };
+    const previous = base?.icon || null;
+    const { path } = await uploadIconFile(iconFile, utilityId);
+    if (previous && previous !== path) {
+      await deleteRepoFile(previous, `remove old icon: ${previous.split("/").pop()}`);
+    }
+    return { path, changed: true };
+  }
+
+  function iconPreviewSrc(path, item) {
+    if (!path) return "";
+    if (path.startsWith("blob:")) return path;
+    const bustItem = item || (path && getItem()?.icon === path ? getItem() : { icon: path });
+    return window.HYOT_PLATFORMS?.utilityIconSrc?.(bustItem) || path;
   }
 
   function normalizeDownloadPath(input) {
@@ -668,10 +704,10 @@
     return Boolean(els.fileManual?.checked);
   }
 
-  function updateIconPreview(path) {
+  function updateIconPreview(path, item) {
     if (!els.iconPreview) return;
     if (path) {
-      const bust = path.startsWith("blob:") ? path : `${path}${path.includes("?") ? "" : `?v=${Date.now()}`}`;
+      const bust = iconPreviewSrc(path, item);
       els.iconPreview.src = bust;
       els.iconPreview.hidden = false;
       if (els.iconPreviewEmpty) els.iconPreviewEmpty.hidden = true;
@@ -752,7 +788,7 @@
     syncFileAccept();
     updatePlatformStatus();
     refreshUpdatedAtField();
-    if (item?.icon) updateIconPreview(item.icon);
+    if (item?.icon) updateIconPreview(item.icon, item);
     else if (!els.icon?.files?.[0]) updateIconPreview(null);
   }
 
@@ -1019,7 +1055,7 @@
         }
 
         progress.set(55);
-        const icon = await resolveIconForSave({ base: cur, utilityId: cur.id });
+        const iconResult = await resolveIconForSave({ base: cur, utilityId: cur.id });
 
         const i = list.findIndex((u) => u.id === cur.id);
         list[i] = buildUtilityPayload(cur, {
@@ -1028,7 +1064,8 @@
           updatedAt,
           windows,
           android,
-          icon,
+          icon: iconResult.path,
+          ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
         });
         nextId = cur.id;
       } else if (manual) {
@@ -1043,7 +1080,7 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
-        const icon = await resolveIconForSave({ base: {}, utilityId: id });
+        const iconResult = await resolveIconForSave({ base: {}, utilityId: id });
 
         const platformData = {
           file: up.path,
@@ -1059,7 +1096,8 @@
               updatedAt,
               windows: platformId === "windows" ? platformData : null,
               android: platformId === "android" ? platformData : null,
-              icon,
+              icon: iconResult.path,
+              ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
             }
           )
         );
@@ -1076,7 +1114,7 @@
           .slice(0, 48) || `item-${Date.now()}`;
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
-        const icon = await resolveIconForSave({ base: {}, utilityId: id });
+        const iconResult = await resolveIconForSave({ base: {}, utilityId: id });
 
         const platformData = {
           file: up.path,
@@ -1092,7 +1130,8 @@
               updatedAt,
               windows: platformId === "windows" ? platformData : null,
               android: platformId === "android" ? platformData : null,
-              icon,
+              icon: iconResult.path,
+              ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
             }
           )
         );
