@@ -33,6 +33,15 @@ GitHub 토큰을 공개 사이트에 넣으면 **자동 폐기**됩니다.
 
 메인 하단에 **「로그인 없이 바로 등록할 수 있습니다.」** 가 보이면 성공입니다.
 
+## 다운로드 횟수 (같은 Worker)
+
+자료실에서 다운로드 버튼을 누르면 Worker가 `data/download-stats.json` 을 갱신합니다.  
+관리자 좌측 목록에 **N회** 로 표시됩니다. Worker를 재배포해야 집계가 동작합니다.
+
+```bash
+cd worker && npx wrangler deploy
+```
+
 ## Firebase (선택)
 
 Firestore만 쓰려면 [feedback-firebase-setup.md](./feedback-firebase-setup.md) 를 따르세요.  

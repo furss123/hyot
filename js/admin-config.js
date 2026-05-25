@@ -6,6 +6,7 @@ window.HYOT_ADMIN_CONFIG = {
     branch: "main",
   },
   dataPath: "data/data.json",
+  downloadStatsPath: "data/download-stats.json",
   downloadsPath: "downloads",
   iconsPath: "assets/icons",
 };

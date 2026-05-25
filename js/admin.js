@@ -65,6 +65,7 @@
   };
 
   let catalogData = null;
+  let downloadStatsById = {};
   let selectedId = null;
   let saveProgressValue = 0;
 
@@ -447,15 +448,53 @@
     return [...new Set([primary, "gh-pages"])];
   }
 
-  async function readJson(branch = cfg.github.branch) {
+  async function readRepoJson(path, branch = cfg.github.branch) {
     const ref = encodeURIComponent(branch);
     const data = await api(
-      `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${cfg.dataPath}?ref=${ref}`
+      `/repos/${cfg.github.owner}/${cfg.github.repo}/contents/${path}?ref=${ref}`
     );
     const text = new TextDecoder().decode(
       Uint8Array.from(atob(data.content.replace(/\s/g, "")), (c) => c.charCodeAt(0))
     );
     return { json: JSON.parse(text), sha: data.sha };
+  }
+
+  async function readJson(branch = cfg.github.branch) {
+    return readRepoJson(cfg.dataPath, branch);
+  }
+
+  function isNotFoundError(err) {
+    return /오류\s*404|not\s*found/i.test(String(err?.message || err));
+  }
+
+  async function loadDownloadStats() {
+    const path = cfg.downloadStatsPath || "data/download-stats.json";
+    try {
+      const { json } = await readRepoJson(path);
+      return json?.byId && typeof json.byId === "object" ? json.byId : {};
+    } catch (err) {
+      if (isNotFoundError(err)) return {};
+      console.warn("[HyoT admin] download stats:", err);
+      return {};
+    }
+  }
+
+  function getDownloadStatsRow(itemId) {
+    return downloadStatsById[itemId] || null;
+  }
+
+  function formatDownloadCount(n) {
+    return new Intl.NumberFormat("ko-KR").format(Math.max(0, Number(n) || 0));
+  }
+
+  function downloadStatsTitle(row) {
+    const total = row?.total ?? 0;
+    if (!row) return `다운로드 ${formatDownloadCount(total)}회`;
+    const parts = [];
+    if (row.windows) parts.push(`Windows ${formatDownloadCount(row.windows)}`);
+    if (row.android) parts.push(`Android ${formatDownloadCount(row.android)}`);
+    const detail = parts.length ? parts.join(" · ") : "플랫폼별 기록 없음";
+    return `다운로드 ${formatDownloadCount(total)}회 (${detail})`;
   }
 
   function uint8ToBase64(bytes) {
@@ -807,7 +846,38 @@
       if (item.id === selectedId) btn.classList.add("admin-list__item--on");
 
       const migrated = migrateUtility(item);
-      btn.innerHTML = `<span class="admin-list__name">${escapeHtml(item.name)}</span><span class="admin-list__meta">${formatDate(item.updatedAt)}</span><span class="admin-list__platforms">${platformBadgesHtml(migrated)}</span>`;
+      const statsRow = getDownloadStatsRow(item.id);
+      const dlTotal = statsRow?.total ?? 0;
+
+      const top = document.createElement("div");
+      top.className = "admin-list__top";
+
+      const nameEl = document.createElement("span");
+      nameEl.className = "admin-list__name";
+      nameEl.textContent = item.name;
+
+      const dlEl = document.createElement("span");
+      dlEl.className = "admin-list__dl";
+      dlEl.title = downloadStatsTitle(statsRow);
+      const dlNum = document.createElement("span");
+      dlNum.className = "admin-list__dl-num";
+      dlNum.textContent = formatDownloadCount(dlTotal);
+      const dlUnit = document.createElement("span");
+      dlUnit.className = "admin-list__dl-unit";
+      dlUnit.textContent = "회";
+      dlEl.append(dlNum, dlUnit);
+
+      top.append(nameEl, dlEl);
+
+      const metaEl = document.createElement("span");
+      metaEl.className = "admin-list__meta";
+      metaEl.textContent = formatDate(item.updatedAt);
+
+      const platformsEl = document.createElement("span");
+      platformsEl.className = "admin-list__platforms";
+      platformsEl.innerHTML = platformBadgesHtml(migrated);
+
+      btn.append(top, metaEl, platformsEl);
       btn.addEventListener("click", () => pickItem(item.id));
 
       const del = document.createElement("button");
@@ -894,7 +964,8 @@
   }
 
   async function load() {
-    const { json } = await readJson();
+    const [{ json }, stats] = await Promise.all([readJson(), loadDownloadStats()]);
+    downloadStatsById = stats;
     catalogData = {
       ...json,
       utilities: (json.utilities || []).map(migrateUtility),

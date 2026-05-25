@@ -171,9 +171,19 @@ async function handlePlatformDownloadClick(event) {
   try {
     await waitUntilFileReady(link.href);
     triggerPlatformDownload(link);
+    const utilityId = link.dataset.utilityId;
+    const platform = link.dataset.platform;
+    if (utilityId) {
+      window.HyotDownloadStats?.recordHit?.(utilityId, platform);
+    }
   } catch (err) {
     console.warn("[HyoT] download probe failed, trying direct download:", err);
     triggerPlatformDownload(link);
+    const utilityId = link.dataset.utilityId;
+    const platform = link.dataset.platform;
+    if (utilityId) {
+      window.HyotDownloadStats?.recordHit?.(utilityId, platform);
+    }
   } finally {
     window.setTimeout(() => setPlatformDownloadLoading(link, false), 320);
   }
@@ -209,6 +219,8 @@ function createPlatformButton(item, platform) {
     link.href = pf.file;
     if (pf.fileName) link.download = pf.fileName;
     const ariaSize = pf.fileSize ? ` (${pf.fileSize})` : "";
+    link.dataset.utilityId = item.id;
+    link.dataset.platform = platform.id;
     link.setAttribute(
       "aria-label",
       `${item.name} — ${getDownloadFileName(item, platform, pf)}${ariaSize} 다운로드`

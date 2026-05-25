@@ -1,5 +1,5 @@
 /**
- * HyoT feedback relay — GitHub 토큰은 Worker에만 저장 (Pages에 노출 안 함)
+ * HyoT Worker — 피드백 릴레이 + 다운로드 횟수 집계
  */
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +8,9 @@ const CORS = {
 };
 
 const FEEDBACK_BRANCH = "main";
+const STATS_PATH = "data/download-stats.json";
 const MAX_SCREENSHOT_BASE64 = 600000;
+const STATS_RETRY = 5;
 
 export default {
   async fetch(request, env) {
@@ -27,6 +29,10 @@ export default {
       return json({ ok: false, error: "invalid_json" }, 400);
     }
 
+    if (body?.action === "download_hit") {
+      return handleDownloadHit(body, env);
+    }
+
     const ingestKey = String(body.ingest_key || "");
     const post = body.post;
     if (!ingestKey || ingestKey !== env.INGEST_KEY) {
@@ -43,13 +49,7 @@ export default {
       return json({ ok: false, error: "server_not_configured" }, 503);
     }
 
-    const headers = {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "hyot-feedback-worker",
-    };
+    const headers = githubHeaders(token);
 
     let prepared;
     try {
@@ -89,6 +89,138 @@ function json(data, status = 200) {
     status,
     headers: { "Content-Type": "application/json", ...CORS },
   });
+}
+
+function githubHeaders(token) {
+  return {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "User-Agent": "hyot-worker",
+  };
+}
+
+function sanitizeUtilityId(raw) {
+  const id = String(raw || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")
+    .slice(0, 64);
+  return id || null;
+}
+
+function sanitizePlatform(raw) {
+  const p = String(raw || "windows").toLowerCase();
+  return p === "android" ? "android" : "windows";
+}
+
+async function handleDownloadHit(body, env) {
+  const utilityId = sanitizeUtilityId(body.utility_id);
+  const platform = sanitizePlatform(body.platform);
+  if (!utilityId) {
+    return json({ ok: false, error: "invalid_utility_id" }, 400);
+  }
+
+  const token = env.GITHUB_TOKEN;
+  if (!token) {
+    return json({ ok: false, error: "server_not_configured" }, 503);
+  }
+
+  const owner = env.GITHUB_OWNER || "furss123";
+  const repo = env.GITHUB_REPO || "hyot";
+  const headers = githubHeaders(token);
+
+  try {
+    const total = await incrementDownloadStats({
+      owner,
+      repo,
+      utilityId,
+      platform,
+      headers,
+    });
+    return json({ ok: true, utility_id: utilityId, total });
+  } catch (err) {
+    return json({ ok: false, error: "stats_failed", detail: String(err) }, 502);
+  }
+}
+
+async function incrementDownloadStats({ owner, repo, utilityId, platform, headers }) {
+  let lastErr;
+  for (let attempt = 0; attempt < STATS_RETRY; attempt++) {
+    try {
+      const { data, sha } = await readStatsFile({ owner, repo, headers });
+      const byId = data.byId && typeof data.byId === "object" ? data.byId : {};
+      const row = byId[utilityId] || { total: 0, windows: 0, android: 0 };
+      row.total = (Number(row.total) || 0) + 1;
+      if (platform === "android") row.android = (Number(row.android) || 0) + 1;
+      else row.windows = (Number(row.windows) || 0) + 1;
+      byId[utilityId] = row;
+      data.version = 1;
+      data.updatedAt = new Date().toISOString();
+      data.byId = byId;
+      await writeStatsFile({ owner, repo, data, sha, headers, utilityId });
+      return row.total;
+    } catch (err) {
+      lastErr = err;
+      if (!isShaConflict(err) || attempt === STATS_RETRY - 1) throw err;
+      await sleep(80 * (attempt + 1));
+    }
+  }
+  throw lastErr;
+}
+
+function isShaConflict(err) {
+  const msg = String(err?.message || err);
+  return /does not match|sha was supplied|409|Conflict/i.test(msg);
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function readStatsFile({ owner, repo, headers }) {
+  const ref = encodeURIComponent(FEEDBACK_BRANCH);
+  const getRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/${STATS_PATH}?ref=${ref}`,
+    { headers }
+  );
+
+  if (getRes.status === 404) {
+    return {
+      data: { version: 1, updatedAt: new Date().toISOString(), byId: {} },
+      sha: null,
+    };
+  }
+  if (!getRes.ok) {
+    throw new Error(`read stats: HTTP ${getRes.status}`);
+  }
+
+  const file = await getRes.json();
+  const text = atob(file.content.replace(/\s/g, ""));
+  return { data: JSON.parse(text), sha: file.sha };
+}
+
+async function writeStatsFile({ owner, repo, data, sha, headers, utilityId }) {
+  const text = JSON.stringify(data, null, 2) + "\n";
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  const content = btoa(binary);
+  const putBody = {
+    message: `download: ${utilityId}`,
+    content,
+    branch: FEEDBACK_BRANCH,
+    ...(sha ? { sha } : {}),
+  };
+
+  const putRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/${STATS_PATH}`,
+    { method: "PUT", headers, body: JSON.stringify(putBody) }
+  );
+  if (!putRes.ok) {
+    const detail = await putRes.text().catch(() => "");
+    throw new Error(`write stats: HTTP ${putRes.status} ${detail}`);
+  }
 }
 
 function screenshotExt(mime) {
