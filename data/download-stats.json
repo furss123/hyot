@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-25T02:32:25.787Z",
+  "updatedAt": "2026-05-25T02:40:03.599Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -18,8 +18,8 @@
       "android": 0
     },
     "hyot-memory-clean": {
-      "total": 0,
-      "windows": 0,
+      "total": 1,
+      "windows": 1,
       "android": 0
     }
   }
