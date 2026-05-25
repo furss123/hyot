@@ -16,18 +16,6 @@
         "fileSize": "81.5 MB"
       },
       "icon": "assets/icons/quickcap-1-1-0.png"
-    },
-    {
-      "id": "hyot-memory-clean",
-      "name": "램쉼 RamShim",
-      "description": "Windows RAM·캐시를 정리해 PC 반응 속도를 개선하는 메모리 정리 프로그램입니다.",
-      "updatedAt": "2026-05-25T03:59:20.424Z",
-      "windows": {
-        "file": "downloads/램심(RamShim)_1.1.0.exe",
-        "fileName": "램심(RamShim)_1.1.0.exe",
-        "fileSize": "68.1 MB"
-      },
-      "icon": "assets/icons/hyot-memory-clean.png"
     }
   ]
 }
