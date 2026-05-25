@@ -18,10 +18,11 @@
     list: PLATFORMS,
     migrateUtility,
     getPlatformFile,
+    normalizeGoogleDriveUrl,
+    isHttpDownloadUrl,
+    isGoogleDriveUrl,
+    extractGoogleDriveFileId,
   } = window.HYOT_PLATFORMS || { list: [] };
-
-  /** 브라우저에서 GitHub Contents API 업로드 시도 상한 (50MB 초과는 직접 등록) */
-  const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
   const MAX_ICON_BYTES = 2 * 1024 * 1024;
   const ICON_ACCEPT_RE = /\.(png|svg|webp|jpe?g|ico)$/i;
 
@@ -44,15 +45,13 @@
     listEmpty: $("admin-list-empty"),
     editorBadge: $("admin-editor-badge"),
     fileRequired: $("admin-file-required"),
-    fileDisplay: $("admin-file-display"),
     form: $("admin-utility-form"),
     name: $("admin-name"),
     description: $("admin-description"),
     updatedAt: $("admin-updated-at"),
-    file: $("admin-file"),
-    fileManual: $("admin-file-manual"),
-    fileManualWrap: $("admin-file-manual-wrap"),
-    filePath: $("admin-file-path"),
+    driveUrl: $("admin-drive-url"),
+    driveFileName: $("admin-drive-filename"),
+    driveFileSize: $("admin-drive-filesize"),
     icon: $("admin-icon"),
     iconDisplay: $("admin-icon-display"),
     iconPreview: $("admin-icon-preview"),
@@ -122,9 +121,61 @@
     return PLATFORMS.find((p) => p.id === platformId);
   }
 
-  function syncFileAccept() {
-    const meta = getPlatformMeta(getSelectedPlatform());
-    if (els.file && meta?.accept) els.file.accept = meta.accept;
+  function platformFileSummary(pf) {
+    if (!pf) return "";
+    const name = pf.fileName || "다운로드";
+    const size = pf.fileSize ? ` (${pf.fileSize})` : "";
+    const file = pf.file || "";
+    if (isHttpDownloadUrl(file)) {
+      const label = isGoogleDriveUrl(file) ? "Google Drive" : "외부 링크";
+      return `${name}${size} · ${label}`;
+    }
+    return `${name}${size} · GitHub 경로(구)`;
+  }
+
+  function syncDriveFieldsFromItem(item) {
+    const pf = item ? getPlatformFile(item, getSelectedPlatform()) : null;
+    if (els.driveUrl) els.driveUrl.value = pf?.file || "";
+    if (els.driveFileName) els.driveFileName.value = pf?.fileName || "";
+    if (els.driveFileSize) els.driveFileSize.value = pf?.fileSize || "";
+  }
+
+  function buildPlatformDataFromDriveForm() {
+    const raw = els.driveUrl?.value?.trim() || "";
+    if (!raw) return null;
+
+    const normalized = normalizeGoogleDriveUrl(raw);
+    if (!/^https?:\/\//i.test(normalized)) {
+      throw new Error("Google Drive 공유 링크 또는 https:// 로 시작하는 URL을 입력하세요.");
+    }
+    if (/\/folders\//i.test(raw)) {
+      throw new Error("Google Drive 폴더 링크는 사용할 수 없습니다. 파일 공유 링크를 붙여넣으세요.");
+    }
+    if (isGoogleDriveUrl(raw) || isGoogleDriveUrl(normalized)) {
+      if (!extractGoogleDriveFileId(raw) && !extractGoogleDriveFileId(normalized)) {
+        throw new Error("Google Drive 파일 공유 링크가 아닙니다.");
+      }
+    }
+
+    const fileName = els.driveFileName?.value?.trim() || "다운로드";
+    const fileSize = els.driveFileSize?.value?.trim() || "";
+
+    return {
+      file: normalized,
+      fileName,
+      fileSize,
+    };
+  }
+
+  function slugFromFileName(fileName) {
+    return (
+      String(fileName)
+        .replace(/\.[^.]+$/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48) || `item-${Date.now()}`
+    );
   }
 
   function platformBadgesHtml(item) {
@@ -162,7 +213,7 @@
       }
       const text = document.createElement("span");
       text.textContent = pf
-        ? `${p.label}: ${pf.fileName || pf.file.split("/").pop()}${pf.fileSize ? ` (${pf.fileSize})` : ""}`
+        ? `${p.label}: ${platformFileSummary(pf)}`
         : `${p.label}: 미등록`;
       row.append(icon, text);
       box.append(row);
@@ -780,51 +831,23 @@
     updateIconPreview(URL.createObjectURL(f));
   }
 
-  function toggleManualFileUI() {
-    const manual = useManualFile();
-    if (els.fileManualWrap) els.fileManualWrap.hidden = !manual;
-    if (els.filePath) els.filePath.required = manual && !isEdit();
-    if (els.file) els.file.required = !manual && !isEdit();
-    if (manual) {
-      els.file.value = "";
-      els.fileDisplay.textContent = "직접 등록 모드 — 파일 선택 안 함";
-    } else if (!isEdit()) {
-      els.fileDisplay.textContent = "파일 선택";
-    }
-  }
-
-  function currentPlatformFileLabel(item) {
-    const pf = getPlatformFile(item, getSelectedPlatform());
-    const fname = pf?.fileName || pf?.file?.split("/").pop() || "";
-    const platform = getPlatformMeta(getSelectedPlatform())?.label || "";
-    return fname
-      ? `${platform} 현재: ${fname} — 클릭하여 교체`
-      : `${platform}용 파일 선택`;
-  }
-
   function updateEditorUI() {
     const item = getItem();
-    const platformLabel = getPlatformMeta(getSelectedPlatform())?.label || "플랫폼";
     if (item) {
       els.editorBadge.textContent = `수정 · ${item.name}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
-      els.fileRequired.hidden = true;
-      els.file.required = false;
-      els.fileDisplay.textContent = currentPlatformFileLabel(item);
+      if (els.fileRequired) els.fileRequired.hidden = true;
+      if (els.driveUrl) els.driveUrl.required = false;
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
       els.deleteBtn.hidden = true;
-      els.fileRequired.hidden = false;
-      els.file.required = !useManualFile();
-      els.fileDisplay.textContent = `${platformLabel}용 파일 선택`;
+      if (els.fileRequired) els.fileRequired.hidden = false;
+      if (els.driveUrl) els.driveUrl.required = true;
       updateIconPreview(null);
     }
-    if (els.fileManual) els.fileManual.checked = false;
-    if (els.filePath) els.filePath.value = "";
-    toggleManualFileUI();
-    syncFileAccept();
+    syncDriveFieldsFromItem(item);
     updatePlatformStatus();
     refreshUpdatedAtField();
     if (item?.icon) updateIconPreview(item.icon, item);
@@ -909,7 +932,6 @@
     selectedId = id;
     els.name.value = item.name;
     els.description.value = item.description;
-    els.file.value = "";
     updateEditorUI();
     renderList();
     els.form.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -926,40 +948,7 @@
     toast("");
   }
 
-  function rejectOversizedFile(file) {
-    if (!file || file.size <= MAX_UPLOAD_BYTES) return false;
-    els.file.value = "";
-    if (els.fileManual) els.fileManual.checked = true;
-    if (els.filePath) {
-      els.filePath.value = `${cfg.downloadsPath}/${file.name}`;
-    }
-    toggleManualFileUI();
-    toast(
-      "50MB 초과 파일은 브라우저 업로드가 불가합니다. 저장소에 직접 올린 뒤 경로로 등록하세요.",
-      true
-    );
-    return true;
-  }
-
-  function onFilePick() {
-    const f = els.file.files[0];
-    if (f) {
-      if (rejectOversizedFile(f)) return;
-      els.fileDisplay.textContent = `${f.name} (${formatSize(f.size)})`;
-      return;
-    }
-    const item = getItem();
-    if (item) {
-      els.fileDisplay.textContent = currentPlatformFileLabel(item);
-    } else {
-      const platformLabel = getPlatformMeta(getSelectedPlatform())?.label || "플랫폼";
-      els.fileDisplay.textContent = `${platformLabel}용 파일 선택`;
-    }
-  }
-
   function onPlatformChange() {
-    syncFileAccept();
-    els.file.value = "";
     updateEditorUI();
   }
 
@@ -1057,30 +1046,25 @@
     e.preventDefault();
     const name = els.name.value.trim();
     const desc = els.description.value.trim();
-    const file = els.file.files[0];
+    const driveUrlRaw = els.driveUrl?.value?.trim() || "";
 
     if (!name || !desc) {
       toast("이름과 설명을 입력하세요.", true);
       return;
     }
-    const manual = useManualFile();
-    const manualPath = normalizeDownloadPath(els.filePath?.value);
+    if (!isEdit() && !driveUrlRaw) {
+      toast("Google Drive 다운로드 링크를 입력하세요.", true);
+      return;
+    }
 
-    if (!isEdit() && !file && !manual) {
-      toast("파일을 선택하거나 「저장소에 직접 올렸음」을 체크하세요.", true);
-      return;
-    }
-    if (manual && !manualPath) {
-      toast("downloads/ 아래 파일 경로를 입력하세요.", true);
-      return;
-    }
-    if (!manual && file && file.size > MAX_UPLOAD_BYTES) {
-      toast("50MB 이하 파일만 브라우저에서 업로드할 수 있습니다.", true);
-      return;
-    }
-    if (manual && file) {
-      toast("직접 등록 모드에서는 파일 선택을 해제하세요.", true);
-      return;
+    let platformDataFromForm = null;
+    if (driveUrlRaw) {
+      try {
+        platformDataFromForm = buildPlatformDataFromDriveForm();
+      } catch (err) {
+        toast(err.message, true);
+        return;
+      }
     }
 
     const progress = beginSaveProgress();
@@ -1090,7 +1074,7 @@
     try {
       progress.set(5);
       const { json } = await readJson();
-      progress.set(12);
+      progress.set(20);
       const list = [...(json.utilities || []).map(migrateUtility)];
       const updatedAt = nowISO();
       let nextId = selectedId;
@@ -1103,29 +1087,12 @@
         let windows = getPlatformFile(cur, "windows");
         let android = getPlatformFile(cur, "android");
 
-        if (file || manual) {
-          const up = manual
-            ? await (async () => {
-                progress.set(35);
-                const verified = await verifyDownloadFile(manualPath);
-                progress.set(70);
-                return verified;
-              })()
-            : await uploadFile(file, (inner) => {
-                progress.set(mapSegment(12, 72, inner));
-              });
-          const platformData = {
-            file: up.path,
-            fileName: up.fileName,
-            fileSize: up.fileSize,
-          };
-          if (platformId === "windows") windows = platformData;
-          else android = platformData;
-        } else {
-          progress.set(40);
+        if (platformDataFromForm) {
+          if (platformId === "windows") windows = platformDataFromForm;
+          else android = platformDataFromForm;
         }
 
-        progress.set(55);
+        progress.set(50);
         const iconResult = await resolveIconForSave({ base: cur, utilityId: cur.id });
 
         const i = list.findIndex((u) => u.id === cur.id);
@@ -1139,59 +1106,13 @@
           ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
         });
         nextId = cur.id;
-      } else if (manual) {
-        progress.set(35);
-        const up = await verifyDownloadFile(manualPath);
-        progress.set(70);
-        let id = up.fileName
-          .replace(/\.[^.]+$/, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 48) || `item-${Date.now()}`;
-        if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
-
-        const iconResult = await resolveIconForSave({ base: {}, utilityId: id });
-
-        const platformData = {
-          file: up.path,
-          fileName: up.fileName,
-          fileSize: up.fileSize,
-        };
-        list.unshift(
-          buildUtilityPayload(
-            { id },
-            {
-              name,
-              description: desc,
-              updatedAt,
-              windows: platformId === "windows" ? platformData : null,
-              android: platformId === "android" ? platformData : null,
-              icon: iconResult.path,
-              ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
-            }
-          )
-        );
-        nextId = id;
       } else {
-        const up = await uploadFile(file, (inner) => {
-          progress.set(mapSegment(12, 72, inner));
-        });
-        let id = file.name
-          .replace(/\.[^.]+$/, "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 48) || `item-${Date.now()}`;
+        progress.set(35);
+        let id = slugFromFileName(platformDataFromForm.fileName);
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
         const iconResult = await resolveIconForSave({ base: {}, utilityId: id });
 
-        const platformData = {
-          file: up.path,
-          fileName: up.fileName,
-          fileSize: up.fileSize,
-        };
         list.unshift(
           buildUtilityPayload(
             { id },
@@ -1199,8 +1120,8 @@
               name,
               description: desc,
               updatedAt,
-              windows: platformId === "windows" ? platformData : null,
-              android: platformId === "android" ? platformData : null,
+              windows: platformId === "windows" ? platformDataFromForm : null,
+              android: platformId === "android" ? platformDataFromForm : null,
               icon: iconResult.path,
               ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
             }
@@ -1296,8 +1217,6 @@
   els.newBtn.addEventListener("click", pickNew);
   els.form.addEventListener("submit", onSave);
   els.deleteBtn.addEventListener("click", onDelete);
-  els.file.addEventListener("change", onFilePick);
-  els.fileManual?.addEventListener("change", toggleManualFileUI);
   els.icon?.addEventListener("change", onIconPick);
   document.querySelectorAll('input[name="admin-platform"]').forEach((radio) => {
     radio.addEventListener("change", onPlatformChange);

@@ -1391,6 +1391,12 @@ a {
   padding-top: 0.25rem;
 }
 
+.admin-drive-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .admin-editor__actions .btn-download {
   flex: 1;
 }

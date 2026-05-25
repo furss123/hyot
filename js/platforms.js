@@ -39,6 +39,36 @@
     return pf;
   }
 
+  function isHttpDownloadUrl(file) {
+    return typeof file === "string" && /^https?:\/\//i.test(file.trim());
+  }
+
+  function extractGoogleDriveFileId(url) {
+    const s = String(url || "").trim();
+    let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+    m = s.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+
+  /** 공유 링크 → 직접 다운로드 URL (Google Drive) */
+  function normalizeGoogleDriveUrl(url) {
+    const trimmed = String(url || "").trim();
+    if (!trimmed) return "";
+    const id = extractGoogleDriveFileId(trimmed);
+    if (id && !trimmed.includes("/folders/")) {
+      return `https://drive.google.com/uc?export=download&id=${id}`;
+    }
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return trimmed;
+  }
+
+  function isGoogleDriveUrl(url) {
+    return /drive\.google\.com|docs\.google\.com/i.test(String(url || ""));
+  }
+
   function hasAnyPlatform(item) {
     return PLATFORMS.some((p) => getPlatformFile(item, p.id));
   }
@@ -169,6 +199,10 @@
     list: PLATFORMS,
     migrateUtility,
     getPlatformFile,
+    isHttpDownloadUrl,
+    isGoogleDriveUrl,
+    extractGoogleDriveFileId,
+    normalizeGoogleDriveUrl,
     hasAnyPlatform,
     hasExternalLink,
     isValidUtility,

@@ -12,6 +12,7 @@ const {
   createPlatformIcon,
   createFileIcon,
   createUtilityIcon,
+  isHttpDownloadUrl,
 } = window.HYOT_PLATFORMS;
 
 const els = {
@@ -165,6 +166,14 @@ function triggerPlatformDownload(link) {
   a.remove();
 }
 
+function recordDownloadHit(link) {
+  const utilityId = link.dataset.utilityId;
+  const platform = link.dataset.platform;
+  if (utilityId) {
+    window.HyotDownloadStats?.recordHit?.(utilityId, platform);
+  }
+}
+
 async function handlePlatformDownloadClick(event) {
   const link = event.target.closest("a.btn-platform");
   if (!link || link.classList.contains("btn-platform--missing")) return;
@@ -172,23 +181,23 @@ async function handlePlatformDownloadClick(event) {
   event.preventDefault();
   if (link.classList.contains("is-downloading")) return;
 
+  if (isHttpDownloadUrl(link.href)) {
+    setPlatformDownloadLoading(link, true);
+    window.open(link.href, "_blank", "noopener,noreferrer");
+    recordDownloadHit(link);
+    window.setTimeout(() => setPlatformDownloadLoading(link, false), 480);
+    return;
+  }
+
   setPlatformDownloadLoading(link, true);
   try {
     await waitUntilFileReady(link.href);
     triggerPlatformDownload(link);
-    const utilityId = link.dataset.utilityId;
-    const platform = link.dataset.platform;
-    if (utilityId) {
-      window.HyotDownloadStats?.recordHit?.(utilityId, platform);
-    }
+    recordDownloadHit(link);
   } catch (err) {
     console.warn("[HyoT] download probe failed, trying direct download:", err);
     triggerPlatformDownload(link);
-    const utilityId = link.dataset.utilityId;
-    const platform = link.dataset.platform;
-    if (utilityId) {
-      window.HyotDownloadStats?.recordHit?.(utilityId, platform);
-    }
+    recordDownloadHit(link);
   } finally {
     window.setTimeout(() => setPlatformDownloadLoading(link, false), 320);
   }
@@ -222,7 +231,12 @@ function createPlatformButton(item, platform) {
     const link = document.createElement("a");
     link.className = `btn-download btn-platform btn-platform--${platform.id}`;
     link.href = pf.file;
-    if (pf.fileName) link.download = pf.fileName;
+    const external = isHttpDownloadUrl(pf.file);
+    if (!external && pf.fileName) link.download = pf.fileName;
+    if (external) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
     const ariaSize = pf.fileSize ? ` (${pf.fileSize})` : "";
     link.dataset.utilityId = item.id;
     link.dataset.platform = platform.id;
