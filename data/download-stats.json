@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-26T06:16:59.073Z",
+  "updatedAt": "2026-05-26T06:30:06.666Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -33,8 +33,8 @@
       "android": 0
     },
     "printgod": {
-      "total": 4,
-      "windows": 4,
+      "total": 5,
+      "windows": 5,
       "android": 0
     },
     "hantopip": {
