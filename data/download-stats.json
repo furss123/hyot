@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-26T02:31:18.704Z",
+  "updatedAt": "2026-05-26T02:31:21.222Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -38,8 +38,8 @@
       "android": 0
     },
     "hantopip": {
-      "total": 1,
-      "windows": 1,
+      "total": 2,
+      "windows": 2,
       "android": 0
     }
   }
