@@ -46,11 +46,11 @@
       "id": "quickcap",
       "name": "퀵캡 QuickCap",
       "description": "Win+Shift+S로 화면을 캡처하면 곧바로 편집 창이 뜨고, 잘라내기·표시·저장까지 이어서 처리할 수 있습니다. 평소에는 트레이에만 머물며 가볍게 쓰기 좋습니다.",
-      "updatedAt": "2026-05-26T07:46:30.000Z",
+      "updatedAt": "2026-05-26T08:00:00.000Z",
       "windows": {
-        "file": "downloads/퀵캡(QuickCap)_1.1.7.zip",
-        "fileName": "QuickCap-1.1.7.zip",
-        "fileSize": "75.9 MB"
+        "file": "downloads/퀵캡(QuickCap)_1.1.8.zip",
+        "fileName": "QuickCap-1.1.8.zip",
+        "fileSize": "73.3 MB"
       },
       "icon": "assets/icons/quickcap-mpkscu2c.png",
       "iconUpdatedAt": "2026-05-25T05:48:40.115Z"
