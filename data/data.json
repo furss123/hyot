@@ -20,11 +20,11 @@
       "id": "printgod",
       "name": "인쇄갓 PrintGod",
       "description": "한글 문서와 PDF 파일을 한 화면에 모아 두고, 원하는 순서대로 지정한 프린터·인쇄 옵션으로 연속 인쇄할 수 있습니다. 학교·사무실에서 여러 과제·보고서·자료를 한 번에 출력해야 할 때, 파일을 하나씩 열어 인쇄하는 수고를 줄이기 위해 만들어졌습니다.",
-      "updatedAt": "2026-05-25T09:34:34.394Z",
+      "updatedAt": "2026-05-26T07:46:30.000Z",
       "windows": {
-        "file": "downloads/프린트갓(PrintGod)_1.0.3.zip",
+        "file": "downloads/인쇄갓(PrintGod)_1.0.3.zip",
         "fileName": "PrintGod-1.0.3.zip",
-        "fileSize": "45.7 MB"
+        "fileSize": "46.3 MB"
       },
       "icon": "assets/icons/printgod-mpksev04.png",
       "iconUpdatedAt": "2026-05-25T05:50:14.643Z"
@@ -33,11 +33,11 @@
       "id": "hantopip",
       "name": "한투핍 HanToPip",
       "description": "한글 문서를 사용자가 지정한 순서대로 PDF로 일괄 변환합니다. 여러 HWP 파일을 하나의 PDF로 병합할 수도 있고, 파일마다 개별 PDF로 저장할 수도 있습니다.",
-      "updatedAt": "2026-05-25T09:35:45.735Z",
+      "updatedAt": "2026-05-26T07:46:30.000Z",
       "windows": {
-        "file": "downloads/HanToPDF-1.0.0.exe",
-        "fileName": "HanToPDF-1.0.0.exe",
-        "fileSize": "54.6 MB"
+        "file": "downloads/한투핍(HanToPip)_1.0.0.zip",
+        "fileName": "HanToPip-1.0.0.zip",
+        "fileSize": "27.4 MB"
       },
       "icon": "assets/icons/hantopip-mpksdwo9.png",
       "iconUpdatedAt": "2026-05-25T05:49:30.153Z"
@@ -46,11 +46,11 @@
       "id": "quickcap",
       "name": "퀵캡 QuickCap",
       "description": "Win+Shift+S로 화면을 캡처하면 곧바로 편집 창이 뜨고, 잘라내기·표시·저장까지 이어서 처리할 수 있습니다. 평소에는 트레이에만 머물며 가볍게 쓰기 좋습니다.",
-      "updatedAt": "2026-05-25T05:48:40.115Z",
+      "updatedAt": "2026-05-26T07:46:30.000Z",
       "windows": {
-        "file": "downloads/QuickCap-1.1.4.exe",
-        "fileName": "QuickCap-1.1.4.exe",
-        "fileSize": "81.5 MB"
+        "file": "downloads/퀵캡(QuickCap)_1.1.7.zip",
+        "fileName": "QuickCap-1.1.7.zip",
+        "fileSize": "75.9 MB"
       },
       "icon": "assets/icons/quickcap-mpkscu2c.png",
       "iconUpdatedAt": "2026-05-25T05:48:40.115Z"
