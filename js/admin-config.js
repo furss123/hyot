@@ -8,4 +8,5 @@ window.HYOT_ADMIN_CONFIG = {
   dataPath: "data/data.json",
   downloadStatsPath: "data/download-stats.json",
   iconsPath: "assets/icons",
+  downloadsPath: "downloads",
 };

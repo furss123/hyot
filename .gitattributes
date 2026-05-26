@@ -1,1 +1,1 @@
-downloads/CleanClass-1.2.0.exe filter=lfs diff=lfs merge=lfs -text
+downloads/** filter=lfs diff=lfs merge=lfs -text

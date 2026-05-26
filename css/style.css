@@ -1399,10 +1399,21 @@ a {
   padding-top: 0.25rem;
 }
 
-.admin-drive-fields {
+.admin-download-fields {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.admin-download-current {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.admin-download-current code {
+  font-size: 0.92em;
 }
 
 .admin-hint--warn {

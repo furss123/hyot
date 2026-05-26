@@ -103,7 +103,7 @@
 
               <label class="admin-field">
                 <span class="admin-field__label">설명</span>
-                <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="예: Windows RAM 정리 — 수동·자동, 트레이 상주 (Drive 업로드 시 자동 제안)"></textarea>
+                <textarea id="admin-description" class="admin-field__input" rows="3" required maxlength="200" placeholder="예: Windows RAM 정리 — 수동·자동, 트레이 상주"></textarea>
               </label>
 
               <div class="admin-field">
@@ -127,33 +127,35 @@
 
               <div id="admin-platform-status" class="admin-platform-status" hidden aria-live="polite"></div>
 
-              <div class="admin-field admin-drive-fields">
-                <label class="admin-field">
-                  <span class="admin-field__label" id="admin-file-label">
-                    Windows · Google Drive <span class="admin-optional">(선택)</span>
-                    <span id="admin-file-required" class="admin-required" hidden>*</span>
-                  </span>
-                  <input
-                    id="admin-drive-url"
-                    class="admin-field__input"
-                    type="text"
-                    inputmode="url"
-                    autocomplete="off"
-                    spellcheck="false"
-                    placeholder="https://drive.google.com/file/d/…/view?usp=sharing"
-                  >
-                  <p class="admin-hint">
-                    Drive에 파일을 올린 뒤 <strong>「링크가 있는 모든 사용자」</strong>로 공유하고, 공유 링크를 붙여넣으세요.
-                    저장 시 다운로드용 URL로 자동 변환됩니다. 링크 없이도 자료만 먼저 등록할 수 있습니다.
-                  </p>
+              <div class="admin-field admin-download-fields">
+                <span class="admin-field__label" id="admin-file-label">
+                  Windows 다운로드 <span class="admin-optional">(선택)</span>
+                  <span id="admin-file-required" class="admin-required" hidden>*</span>
+                </span>
+                <p id="admin-download-current" class="admin-download-current" hidden></p>
+                <label class="admin-file-btn">
+                  <input id="admin-download-file" class="admin-file-btn__input" type="file" accept=".exe,.msi,.zip,.7z,application/octet-stream,application/x-msdownload,application/zip,application/x-zip-compressed">
+                  <span id="admin-download-display">실행 파일 선택 (exe · msi · zip · 7z)</span>
+                </label>
+                <p class="admin-hint">
+                  저장 시 GitHub 저장소 <code>downloads/</code>에 업로드됩니다. 95MB 이하만 브라우저에서 올릴 수 있습니다.
+                  더 큰 파일은 Git LFS로 올린 뒤 아래 「직접 올림」을 사용하세요.
+                </p>
+                <label class="admin-check admin-check--nested">
+                  <input type="checkbox" id="admin-download-manual">
+                  <span>Git·LFS로 저장소에 직접 올림 (100MB 초과)</span>
+                </label>
+                <label class="admin-field admin-field--nested" id="admin-download-path-wrap" hidden>
+                  <span class="admin-field__label">저장소 경로</span>
+                  <input id="admin-download-path" class="admin-field__input" type="text" maxlength="160" placeholder="downloads/MyApp-1.0.0.exe" autocomplete="off" spellcheck="false">
                 </label>
                 <label class="admin-field admin-field--nested">
                   <span class="admin-field__label">표시용 파일명</span>
-                  <input id="admin-drive-filename" class="admin-field__input" type="text" maxlength="120" placeholder="예: CleanClass-1.2.0.exe" autocomplete="off">
+                  <input id="admin-download-filename" class="admin-field__input" type="text" maxlength="120" placeholder="예: CleanClass-1.2.0.exe" autocomplete="off">
                 </label>
                 <label class="admin-field admin-field--nested">
                   <span class="admin-field__label">용량 표시 (선택)</span>
-                  <input id="admin-drive-filesize" class="admin-field__input" type="text" maxlength="24" placeholder="예: 68.1 MB" autocomplete="off">
+                  <input id="admin-download-filesize" class="admin-field__input" type="text" maxlength="24" placeholder="예: 68.1 MB" autocomplete="off">
                 </label>
               </div>
             </div>
@@ -217,8 +219,8 @@
   <script src="js/admin-auth.js"></script>
   <script src="js/admin-config.js?v=20260527d"></script>
   <script src="js/catalog-sync.js?v=20260527d"></script>
-  <script src="js/platforms.js?v=20260527c"></script>
-  <script src="js/admin.js?v=20260527d" defer></script>
+  <script src="js/platforms.js?v=20260530a"></script>
+  <script src="js/admin.js?v=20260530a" defer></script>
   <script src="js/admin-feedback.js" defer></script>
   <script src="js/admin-feedback-github.js?v=20260529" defer></script>
 </body>

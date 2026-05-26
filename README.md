@@ -53,13 +53,18 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 
 `js/admin-secrets.example.js`를 `js/admin-auth.js`로 복사한 뒤 값을 채웁니다.
 
-### 다운로드 파일 (Google Drive)
+### 다운로드 파일 (GitHub 저장소)
 
-실행 파일은 **Google Drive**에 올리고, 관리자에서 **공유 링크**를 등록합니다. 저장 시 다운로드용 URL로 자동 변환됩니다.
+관리자 패널에서 **exe · msi · zip · 7z** 파일을 선택하면 `main` 브랜치의 `downloads/`에 GitHub API로 업로드되고, `data.json`에는 저장소 경로가 기록됩니다. 방문자는 `media.githubusercontent.com` CDN으로 받습니다.
+
+- **95MB 이하**: 관리자에서 파일 선택 후 저장 (브라우저 업로드)
+- **95MB 초과**: 로컬에서 Git LFS로 `downloads/`에 올린 뒤, 관리자에서 「Git·LFS로 직접 올림」과 경로 입력
+
+GitHub Pages 배포(`gh-pages`)에는 `downloads/`가 포함되지 않습니다. 바이너리는 `main`만 사용합니다.
 
 ### 수동 추가 (JSON 직접 편집)
 
-`data/data.json`의 `utilities` 배열에 항목을 추가할 수 있습니다. `windows` 객체에 Drive URL을 넣습니다.
+`data/data.json`의 `utilities` 배열에 항목을 추가할 수 있습니다. `windows.file`에는 **저장소 경로**를 넣습니다.
 
 ```json
 {
@@ -68,8 +73,8 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
   "description": "한두 줄 설명",
   "updatedAt": "2026-05-24",
   "windows": {
-    "file": "https://drive.google.com/uc?export=download&id=FILE_ID",
-    "fileName": "my-app.zip",
+    "file": "downloads/my-app-1.0.0.exe",
+    "fileName": "my-app.exe",
     "fileSize": "2.4 MB"
   }
 }
@@ -80,8 +85,8 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 | `id` | ✓ | 고유 ID (영문·숫자·하이픈) |
 | `name` | ✓ | 카드 제목 |
 | `description` | ✓ | 짧은 설명 (1~2줄) |
-| `updatedAt` | ✓ | `YYYY-MM-DD` |
-| `windows` | 선택 | `file`: https Drive URL, `fileName`, `fileSize` |
+| `updatedAt` | ✓ | ISO 날짜 |
+| `windows` | 선택 | `file`: `downloads/...` 경로, `fileName`, `fileSize` |
 | `icon` | 선택 | 관리자에서 업로드한 카드 아이콘 (`assets/icons/...`) |
 
 `main` 브랜치에 push하면 Actions가 사이트를 갱신합니다.

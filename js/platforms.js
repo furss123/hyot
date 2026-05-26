@@ -11,6 +11,16 @@
     },
   ];
 
+  const DOWNLOAD_EXT_RE = /\.(exe|msi|zip|7z)$/i;
+
+  function getGithubConfig() {
+    return window.HYOT_ADMIN_CONFIG?.github || {
+      owner: "furss123",
+      repo: "hyot",
+      branch: "main",
+    };
+  }
+
   function migrateUtility(item) {
     if (!item || typeof item !== "object") return item;
     const out = { ...item };
@@ -27,14 +37,44 @@
     return out;
   }
 
+  function isRepoDownloadPath(file) {
+    const s = String(file || "").trim();
+    if (!s || /^https?:\/\//i.test(s)) return false;
+    return /^downloads\/[^/\\]+$/i.test(s.replace(/\\/g, "/"));
+  }
+
+  function normalizeRepoDownloadPath(path) {
+    const s = String(path || "")
+      .trim()
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "");
+    if (!s) return "";
+    if (!/^downloads\//i.test(s)) {
+      throw new Error("다운로드 경로는 downloads/ 로 시작해야 합니다.");
+    }
+    if (s.includes("..") || s.includes("//")) {
+      throw new Error("올바르지 않은 저장소 경로입니다.");
+    }
+    if (!DOWNLOAD_EXT_RE.test(s)) {
+      throw new Error("다운로드 파일은 exe, msi, zip, 7z 만 등록할 수 있습니다.");
+    }
+    return s;
+  }
+
+  function hasPlatformDownload(pf) {
+    if (!pf || typeof pf.file !== "string") return false;
+    const file = pf.file.trim();
+    if (!file) return false;
+    return isHttpDownloadUrl(file) || isRepoDownloadPath(file);
+  }
+
   function getPlatformFile(item, platformId) {
     const pf = item?.[platformId];
-    if (!pf || typeof pf.file !== "string" || !pf.file.trim()) return null;
-    if (!isHttpDownloadUrl(pf.file)) return null;
+    if (!hasPlatformDownload(pf)) return null;
     return pf;
   }
 
-  /** 관리자 편집용 — 저장소 경로 등 비-URL도 읽기 */
+  /** 관리자 편집용 — 저장소 경로·비-URL도 읽기 */
   function getRawPlatformFile(item, platformId) {
     const pf = item?.[platformId];
     if (!pf || typeof pf.file !== "string" || !pf.file.trim()) return null;
@@ -45,53 +85,34 @@
     return typeof file === "string" && /^https?:\/\//i.test(file.trim());
   }
 
-  function extractGoogleDriveFileId(url) {
-    const s = String(url || "").trim();
-    let m = s.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (m) return m[1];
-    m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (m) return m[1];
-    m = s.match(/\/folders\/([a-zA-Z0-9_-]+)/);
-    return m ? m[1] : null;
+  /** 저장소 경로 → 방문자 다운로드 URL (LFS는 media CDN) */
+  function resolveRepoFileDownloadUrl(path, cacheBust) {
+    const clean = String(path || "")
+      .trim()
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "");
+    const gh = getGithubConfig();
+    const owner = gh.owner || "furss123";
+    const repo = gh.repo || "hyot";
+    const branch = encodeURIComponent(String(gh.branch || "main").trim() || "main");
+    const segments = clean.split("/").map((s) => encodeURIComponent(s));
+    const encodedPath = segments.join("/");
+    const base = clean.startsWith("downloads/")
+      ? `https://media.githubusercontent.com/media/${owner}/${repo}/${branch}/${encodedPath}`
+      : `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encodedPath}`;
+    if (!cacheBust) return base;
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}v=${encodeURIComponent(cacheBust)}`;
   }
 
-  /** 대용량 파일 바이러스 검사 안내 페이지 우회용 직접 다운로드 URL */
-  function buildGoogleDriveDirectUrl(fileId) {
-    const id = String(fileId || "").trim();
-    if (!id) return "";
-    return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
-  }
-
-  function getDriveDownloadRelayBase() {
-    const relay = String(window.HYOT_FEEDBACK_CONFIG?.relayUrl || "").trim();
-    return relay ? relay.replace(/\/$/, "") : "";
-  }
-
-  /** 방문자 다운로드 — Worker가 있으면 확인 토큰 파싱 후 리다이렉트 */
-  function resolveGoogleDriveDownloadUrl(url) {
-    const id = extractGoogleDriveFileId(url);
-    if (!id) return String(url || "").trim();
-    const relay = getDriveDownloadRelayBase();
-    if (relay) {
-      return `${relay}/drive?id=${encodeURIComponent(id)}`;
-    }
-    return buildGoogleDriveDirectUrl(id);
-  }
-
-  /** 공유 링크 → 저장용 직접 다운로드 URL (Google Drive) */
-  function normalizeGoogleDriveUrl(url) {
-    const trimmed = String(url || "").trim();
+  /** windows.file → 실제 다운로드 URL */
+  function resolvePlatformDownloadUrl(file, cacheBust) {
+    const trimmed = String(file || "").trim();
     if (!trimmed) return "";
-    const id = extractGoogleDriveFileId(trimmed);
-    if (id && !trimmed.includes("/folders/")) {
-      return buildGoogleDriveDirectUrl(id);
+    if (isRepoDownloadPath(trimmed)) {
+      return resolveRepoFileDownloadUrl(trimmed, cacheBust);
     }
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
     return trimmed;
-  }
-
-  function isGoogleDriveUrl(url) {
-    return /drive\.google\.com|docs\.google\.com/i.test(String(url || ""));
   }
 
   function hasAnyPlatform(item) {
@@ -102,7 +123,6 @@
     return typeof item?.link === "string" && item.link.trim().length > 0;
   }
 
-  /** 메인·피드백 목록 표시 — Drive 링크 없어도 카드에 노출(다운로드는 준비 중) */
   function isValidUtility(item) {
     return (
       item &&
@@ -147,7 +167,6 @@
     return typeof path === "string" && path.trim() ? path.trim() : "";
   }
 
-  /** 아이콘 교체 후에도 캐시된 이전 이미지가 보이지 않도록 버전 쿼리 부여 */
   function utilityIconSrc(item) {
     const path = getUtilityIconPath(item);
     if (!path) return "";
@@ -225,12 +244,12 @@
     migrateUtility,
     getPlatformFile,
     getRawPlatformFile,
+    hasPlatformDownload,
     isHttpDownloadUrl,
-    isGoogleDriveUrl,
-    extractGoogleDriveFileId,
-    buildGoogleDriveDirectUrl,
-    resolveGoogleDriveDownloadUrl,
-    normalizeGoogleDriveUrl,
+    isRepoDownloadPath,
+    normalizeRepoDownloadPath,
+    resolveRepoFileDownloadUrl,
+    resolvePlatformDownloadUrl,
     hasAnyPlatform,
     hasExternalLink,
     isValidUtility,

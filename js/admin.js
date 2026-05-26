@@ -19,13 +19,14 @@
     migrateUtility,
     getPlatformFile,
     getRawPlatformFile,
-    normalizeGoogleDriveUrl,
-    isHttpDownloadUrl,
-    isGoogleDriveUrl,
-    extractGoogleDriveFileId,
+    isRepoDownloadPath,
+    normalizeRepoDownloadPath,
+    hasPlatformDownload,
   } = window.HYOT_PLATFORMS || { list: [] };
   const MAX_ICON_BYTES = 2 * 1024 * 1024;
+  const MAX_DOWNLOAD_BYTES = 95 * 1024 * 1024;
   const ICON_ACCEPT_RE = /\.(png|svg|webp|jpe?g|ico)$/i;
+  const DOWNLOAD_ACCEPT_RE = /\.(exe|msi|zip|7z)$/i;
 
   if (!cfg) return;
 
@@ -50,9 +51,14 @@
     name: $("admin-name"),
     description: $("admin-description"),
     updatedAt: $("admin-updated-at"),
-    driveUrl: $("admin-drive-url"),
-    driveFileName: $("admin-drive-filename"),
-    driveFileSize: $("admin-drive-filesize"),
+    downloadFile: $("admin-download-file"),
+    downloadDisplay: $("admin-download-display"),
+    downloadCurrent: $("admin-download-current"),
+    downloadFileName: $("admin-download-filename"),
+    downloadFileSize: $("admin-download-filesize"),
+    downloadManual: $("admin-download-manual"),
+    downloadPath: $("admin-download-path"),
+    downloadPathWrap: $("admin-download-path-wrap"),
     icon: $("admin-icon"),
     iconDisplay: $("admin-icon-display"),
     iconPreview: $("admin-icon-preview"),
@@ -123,75 +129,75 @@
     if (!pf) return "";
     const name = pf.fileName || "다운로드";
     const size = pf.fileSize ? ` (${pf.fileSize})` : "";
-    const file = pf.file || "";
-    if (!isHttpDownloadUrl(file)) {
-      return `${name}${size} · Drive 링크 필요`;
+    const file = String(pf.file || "").trim();
+    if (!hasPlatformDownload(pf)) {
+      return `${name}${size} · 파일 없음`;
     }
-    const label = isGoogleDriveUrl(file) ? "Google Drive" : "외부 링크";
+    const label = isRepoDownloadPath(file) ? "GitHub" : "외부 링크";
     return `${name}${size} · ${label}`;
   }
 
-  function syncDriveFieldsFromItem(item) {
-    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
-    if (els.driveUrl) {
-      els.driveUrl.value = pf?.file && isHttpDownloadUrl(pf.file) ? pf.file : "";
+  function resetDownloadFields() {
+    if (els.downloadFile) els.downloadFile.value = "";
+    if (els.downloadDisplay) {
+      els.downloadDisplay.textContent = "실행 파일 선택 (exe · msi · zip · 7z)";
     }
-    if (els.driveFileName) {
-      els.driveFileName.value =
-        pf?.fileName || (pf?.file && !isHttpDownloadUrl(pf.file) ? pf.file.split("/").pop() : "") || "";
-    }
-    if (els.driveFileSize) els.driveFileSize.value = pf?.fileSize || "";
+    if (els.downloadManual) els.downloadManual.checked = false;
+    if (els.downloadPath) els.downloadPath.value = "";
+    updateDownloadManualUI();
   }
 
-  /** 수정: Drive URL·표시 정보만 변경 / 신규: Drive URL 검증 */
-  function resolvePlatformDataForSave(item) {
-    const raw = els.driveUrl?.value?.trim() || "";
-    if (!raw) return null;
-
-    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
-    const storedFile = String(pf?.file || "").trim();
-    const fileName = els.driveFileName?.value?.trim() || "";
-    const fileSize = els.driveFileSize?.value?.trim() || "";
-
-    if (item && pf && isHttpDownloadUrl(storedFile) && raw === storedFile) {
-      const nameSame = fileName === String(pf.fileName || "").trim();
-      const sizeSame = fileSize === String(pf.fileSize || "").trim();
-      if (nameSame && sizeSame) return null;
-      return {
-        file: storedFile,
-        fileName: fileName || pf.fileName || "다운로드",
-        fileSize: fileSize || pf.fileSize || "",
-      };
+  function updateDownloadManualUI() {
+    const manual = Boolean(els.downloadManual?.checked);
+    if (els.downloadPathWrap) els.downloadPathWrap.hidden = !manual;
+    if (els.downloadFile?.closest(".admin-file-btn")) {
+      els.downloadFile.closest(".admin-file-btn").hidden = manual;
     }
-
-    return buildPlatformDataFromDriveForm();
   }
 
-  function buildPlatformDataFromDriveForm() {
-    const raw = els.driveUrl?.value?.trim() || "";
-    if (!raw) return null;
-
-    const normalized = normalizeGoogleDriveUrl(raw);
-    if (!/^https?:\/\//i.test(normalized)) {
-      throw new Error("Google Drive 공유 링크 또는 https:// 로 시작하는 URL을 입력하세요.");
-    }
-    if (/\/folders\//i.test(raw)) {
-      throw new Error("Google Drive 폴더 링크는 사용할 수 없습니다. 파일 공유 링크를 붙여넣으세요.");
-    }
-    if (isGoogleDriveUrl(raw) || isGoogleDriveUrl(normalized)) {
-      if (!extractGoogleDriveFileId(raw) && !extractGoogleDriveFileId(normalized)) {
-        throw new Error("Google Drive 파일 공유 링크가 아닙니다.");
+  function syncDownloadFieldsFromItem(item) {
+    resetDownloadFields();
+    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
+    if (els.downloadCurrent) {
+      if (pf && hasPlatformDownload(pf)) {
+        els.downloadCurrent.hidden = false;
+        els.downloadCurrent.innerHTML = `등록됨: <code>${escapeHtml(pf.file)}</code>`;
+      } else {
+        els.downloadCurrent.hidden = true;
+        els.downloadCurrent.textContent = "";
       }
     }
+    if (els.downloadFileName) {
+      els.downloadFileName.value = pf?.fileName || (pf?.file ? pf.file.split("/").pop() : "") || "";
+    }
+    if (els.downloadFileSize) els.downloadFileSize.value = pf?.fileSize || "";
+    if (pf && isRepoDownloadPath(pf.file) && els.downloadPath) {
+      els.downloadPath.value = pf.file;
+    }
+  }
 
-    const fileName = els.driveFileName?.value?.trim() || "다운로드";
-    const fileSize = els.driveFileSize?.value?.trim() || "";
-
+  function readDownloadMetaFields(fallbackName = "다운로드") {
     return {
-      file: normalized,
-      fileName,
-      fileSize,
+      fileName: els.downloadFileName?.value?.trim() || fallbackName,
+      fileSize: els.downloadFileSize?.value?.trim() || "",
     };
+  }
+
+  function buildPlatformDataFromManualPath() {
+    const path = normalizeRepoDownloadPath(els.downloadPath?.value?.trim() || "");
+    const meta = readDownloadMetaFields(path.split("/").pop() || "다운로드");
+    return { file: path, ...meta };
+  }
+
+  /** 표시명·용량만 바뀐 경우 기존 경로 유지 */
+  function resolvePlatformMetaOnly(item) {
+    const pf = item ? getRawPlatformFile(item, getSelectedPlatform()) : null;
+    if (!pf || !hasPlatformDownload(pf)) return null;
+    const meta = readDownloadMetaFields(pf.fileName || "다운로드");
+    const nameSame = meta.fileName === String(pf.fileName || "").trim();
+    const sizeSame = meta.fileSize === String(pf.fileSize || "").trim();
+    if (nameSame && sizeSame) return null;
+    return { file: pf.file, ...meta };
   }
 
   function slugFromFileName(fileName) {
@@ -510,7 +516,7 @@
       }
       if (/too large/i.test(msg)) {
         msg =
-          "파일이 너무 커서 브라우저 업로드가 불가합니다. 「저장소에 파일을 직접 올렸음」을 체크하고 경로로 등록하세요.";
+          "파일이 너무 커서 브라우저 업로드가 불가합니다. Git LFS로 올린 뒤 「Git·LFS로 직접 올림」과 저장소 경로를 입력하세요.";
       } else if (res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504) {
         msg =
           "GitHub 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요.";
@@ -727,6 +733,102 @@
     return { path };
   }
 
+  function buildDownloadStoragePath(fileName, utilityId) {
+    if (!DOWNLOAD_ACCEPT_RE.test(fileName)) {
+      throw new Error("다운로드 파일은 exe, msi, zip, 7z 만 업로드할 수 있습니다.");
+    }
+    const safeId =
+      String(utilityId)
+        .replace(/[^a-z0-9-]/g, "")
+        .slice(0, 48) || `item-${Date.now()}`;
+    const base = (cfg.downloadsPath || "downloads").replace(/\/$/, "");
+    const stamp = Date.now().toString(36);
+    const ext = fileName.split(".").pop().toLowerCase();
+    const safeBase = fileName
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 64);
+    const leaf = safeBase ? `${safeBase}-${stamp}.${ext}` : `${safeId}-${stamp}.${ext}`;
+    return `${base}/${leaf}`;
+  }
+
+  async function putDownloadOnMain(path, base64Content, message) {
+    const branch = String(cfg.github.branch || "main").trim() || "main";
+    let sha = null;
+    try {
+      const ref = encodeURIComponent(branch);
+      const ex = await api(`${repoPath()}/contents/${path}?ref=${ref}`);
+      sha = ex.sha;
+    } catch {
+      /* new file */
+    }
+    await api(`${repoPath()}/contents/${path}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        message,
+        content: base64Content,
+        branch,
+        ...(sha ? { sha } : {}),
+      }),
+    });
+  }
+
+  async function uploadDownloadFile(file, utilityId, onProgress) {
+    if (file.size > MAX_DOWNLOAD_BYTES) {
+      throw new Error(
+        `파일이 너무 큽니다 (${formatSize(file.size)}). 95MB 이하만 브라우저 업로드가 가능합니다. Git LFS로 올린 뒤 「직접 올림」을 사용하세요.`
+      );
+    }
+    const path = buildDownloadStoragePath(file.name, utilityId);
+    const b64 = await fileToBase64(file, onProgress);
+    await putDownloadOnMain(path, b64, `download: ${path.split("/").pop()}`);
+    return {
+      path,
+      fileName: file.name,
+      fileSize: formatSize(file.size),
+    };
+  }
+
+  async function resolveWindowsForSave({ item, utilityId, progress }) {
+    const picked = els.downloadFile?.files?.[0];
+    const manual = Boolean(els.downloadManual?.checked);
+
+    if (manual) {
+      const pathRaw = els.downloadPath?.value?.trim() || "";
+      if (!pathRaw) {
+        throw new Error("저장소 경로를 입력하세요. (예: downloads/MyApp-1.0.0.exe)");
+      }
+      return buildPlatformDataFromManualPath();
+    }
+
+    if (picked) {
+      progress?.set?.(40);
+      const uploaded = await uploadDownloadFile(picked, utilityId, (ratio) => {
+        progress?.set?.(40 + ratio * 35);
+      });
+      progress?.set?.(78);
+      const previous = item ? getRawPlatformFile(item, "windows")?.file : null;
+      if (previous && isRepoDownloadPath(previous) && previous !== uploaded.path) {
+        await deleteRepoFile(previous, `remove old download: ${previous.split("/").pop()}`);
+      }
+      if (els.downloadFileName && !els.downloadFileName.value.trim()) {
+        els.downloadFileName.value = uploaded.fileName;
+      }
+      if (els.downloadFileSize && !els.downloadFileSize.value.trim()) {
+        els.downloadFileSize.value = uploaded.fileSize;
+      }
+      return {
+        file: uploaded.path,
+        fileName: els.downloadFileName?.value?.trim() || uploaded.fileName,
+        fileSize: els.downloadFileSize?.value?.trim() || uploaded.fileSize,
+      };
+    }
+
+    if (item) return resolvePlatformMetaOnly(item);
+    return null;
+  }
+
   async function resolveIconForSave({ base, utilityId }) {
     const iconFile = els.icon?.files?.[0];
     if (!iconFile) return { path: base?.icon || null, changed: false };
@@ -796,9 +898,8 @@
       updateIconPreview(null);
     }
     if (els.fileRequired) els.fileRequired.hidden = true;
-    if (els.driveUrl) els.driveUrl.required = false;
 
-    syncDriveFieldsFromItem(item);
+    syncDownloadFieldsFromItem(item);
     updatePlatformStatus();
     refreshUpdatedAtField();
     if (item?.icon) updateIconPreview(item.icon, item);
@@ -993,24 +1094,11 @@
     e.preventDefault();
     const name = els.name.value.trim();
     const desc = els.description.value.trim();
-    const driveUrlRaw = els.driveUrl?.value?.trim() || "";
-
     if (!name || !desc) {
       toast("이름과 설명을 입력하세요.", true);
       return;
     }
     const editItem = isEdit() ? migrateUtility(getItem()) : null;
-    let platformDataFromForm = null;
-    if (driveUrlRaw) {
-      try {
-        platformDataFromForm = resolvePlatformDataForSave(editItem);
-      } catch (err) {
-        toast(err.message, true);
-        return;
-      }
-    } else if (isEdit()) {
-      platformDataFromForm = resolvePlatformDataForSave(editItem);
-    }
 
     const progress = beginSaveProgress();
     toast("");
@@ -1030,7 +1118,12 @@
         const cur = migrateUtility(getItem());
         let windows = getRawPlatformFile(cur, "windows");
 
-        if (platformDataFromForm) windows = platformDataFromForm;
+        const windowsNext = await resolveWindowsForSave({
+          item: cur,
+          utilityId: cur.id,
+          progress,
+        });
+        if (windowsNext) windows = windowsNext;
 
         progress.set(50);
         const iconResult = await resolveIconForSave({ base: cur, utilityId: cur.id });
@@ -1047,11 +1140,10 @@
         nextId = cur.id;
       } else {
         progress.set(35);
-        let id = slugFromFileName(
-          platformDataFromForm?.fileName || els.driveFileName?.value?.trim() || name
-        );
+        let id = slugFromFileName(els.downloadFileName?.value?.trim() || name);
         if (list.some((u) => u.id === id)) id += `-${Date.now().toString(36)}`;
 
+        const windowsNew = await resolveWindowsForSave({ item: null, utilityId: id, progress });
         const iconResult = await resolveIconForSave({ base: {}, utilityId: id });
 
         list.unshift(
@@ -1061,7 +1153,7 @@
               name,
               description: desc,
               updatedAt,
-              windows: platformDataFromForm,
+              windows: windowsNew,
               icon: iconResult.path,
               ...(iconResult.changed ? { iconUpdatedAt: updatedAt } : {}),
             }
@@ -1165,6 +1257,35 @@
   els.form.addEventListener("submit", onSave);
   els.deleteBtn.addEventListener("click", onDelete);
   els.icon?.addEventListener("change", onIconPick);
+  els.downloadFile?.addEventListener("change", onDownloadPick);
+  els.downloadManual?.addEventListener("change", updateDownloadManualUI);
+
+  function onDownloadPick() {
+    const f = els.downloadFile?.files?.[0];
+    if (!f) return;
+    if (!DOWNLOAD_ACCEPT_RE.test(f.name)) {
+      els.downloadFile.value = "";
+      toast("다운로드 파일은 exe, msi, zip, 7z 만 사용할 수 있습니다.", true);
+      return;
+    }
+    if (f.size > MAX_DOWNLOAD_BYTES) {
+      els.downloadFile.value = "";
+      toast(
+        `${formatSize(f.size)} 파일은 브라우저 업로드 한도(95MB)를 초과합니다. Git LFS 후 「직접 올림」을 사용하세요.`,
+        true
+      );
+      return;
+    }
+    if (els.downloadDisplay) els.downloadDisplay.textContent = `${f.name} (${formatSize(f.size)})`;
+    if (els.downloadFileName && !els.downloadFileName.value.trim()) {
+      els.downloadFileName.value = f.name;
+    }
+    if (els.downloadFileSize && !els.downloadFileSize.value.trim()) {
+      els.downloadFileSize.value = formatSize(f.size);
+    }
+    if (els.downloadManual) els.downloadManual.checked = false;
+    updateDownloadManualUI();
+  }
   async function init() {
     applyRememberPreferences();
     setView("login");
