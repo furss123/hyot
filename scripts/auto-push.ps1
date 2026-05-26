@@ -70,10 +70,19 @@ if ($ahead -eq 0 -and $PushOnly) {
   exit 0
 }
 
+function Show-DownloadRegistrationLinks {
+  try {
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\print-download-links.ps1") -Commit HEAD
+  } catch {
+    Write-Log "download link summary skipped: $_"
+  }
+}
+
 Write-Log "pushing to origin/$branch"
 git push origin $branch 2>&1 | Out-Host
 if ($LASTEXITCODE -eq 0) {
   Write-Log "done"
+  Show-DownloadRegistrationLinks
   exit 0
 }
 
@@ -91,3 +100,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Log "done"
+Show-DownloadRegistrationLinks

@@ -60,6 +60,17 @@ Secrets 저장 후 `main`에 push하면 배포 시 `js/admin-auth.js`가 자동 
 - **95MB 이하**: 관리자에서 파일 선택 후 저장 (브라우저 업로드)
 - **95MB 초과**: 로컬에서 Git LFS로 `downloads/`에 올린 뒤, 관리자에서 「Git·LFS로 직접 올림」과 경로 입력
 
+푸시 직후 등록용 링크·`data.json` 예시는 자동으로 출력됩니다.
+
+```powershell
+.\scripts\auto-push.ps1
+# 또는 파일만 지정
+.\scripts\print-download-links.ps1 -Paths downloads/MyApp-1.0.0.exe -UtilityId my-app -UtilityName "내 프로그램"
+```
+
+출력 내용: 저장소 경로, 방문자 다운로드 URL, `data.json` 스니펫, 관리자·의견 게시판 페이지 링크.  
+의견 게시판 「관련 프로그램」 목록은 `data.json`에 `windows.file`이 등록된 자료만 표시됩니다.
+
 GitHub Pages 배포(`gh-pages`)에는 `downloads/`가 포함되지 않습니다. 바이너리는 `main`만 사용합니다.
 
 ### 수동 추가 (JSON 직접 편집)
