@@ -6,17 +6,6 @@
   },
   "utilities": [
     {
-      "id": "cleanclass",
-      "name": "클린클래스 CleanClass",
-      "description": "학교 교실 PC에서 허용되지 않은 게임·VPN·애드웨어 등을 찾아 정리하는 프로그램입니다. 수업·과제용 파일은 화이트리스트로 보호하고, 실행 시 관리자 권한이 필요할 수 있습니다.",
-      "updatedAt": "2026-05-25T05:52:02.598Z",
-      "windows": {
-        "file": "downloads/CleanClass-1.2.0.exe",
-        "fileName": "CleanClass-1.2.0.exe",
-        "fileSize": "171.4 MB"
-      }
-    },
-    {
       "id": "printgod",
       "name": "인쇄갓 PrintGod",
       "description": "한글 문서와 PDF 파일을 한 화면에 모아 두고, 원하는 순서대로 지정한 프린터·인쇄 옵션으로 연속 인쇄할 수 있습니다. 학교·사무실에서 여러 과제·보고서·자료를 한 번에 출력해야 할 때, 파일을 하나씩 열어 인쇄하는 수고를 줄이기 위해 만들어졌습니다.",
