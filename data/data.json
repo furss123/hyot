@@ -20,7 +20,7 @@
       "id": "printgod",
       "name": "인쇄갓 PrintGod",
       "description": "한글 문서와 PDF 파일을 한 화면에 모아 두고, 원하는 순서대로 지정한 프린터·인쇄 옵션으로 연속 인쇄할 수 있습니다. 학교·사무실에서 여러 과제·보고서·자료를 한 번에 출력해야 할 때, 파일을 하나씩 열어 인쇄하는 수고를 줄이기 위해 만들어졌습니다.",
-      "updatedAt": "2026-05-26T07:46:30.000Z",
+      "updatedAt": "2026-05-26T07:48:58.283Z",
       "windows": {
         "file": "downloads/인쇄갓(PrintGod)_1.0.3.zip",
         "fileName": "PrintGod-1.0.3.zip",
