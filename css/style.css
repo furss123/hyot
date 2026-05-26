@@ -1136,6 +1136,31 @@ a {
   box-shadow: inset 3px 0 0 var(--accent-purple);
 }
 
+.admin-list__item--hidden {
+  opacity: 0.72;
+}
+
+.admin-list__item--hidden.admin-list__item--on {
+  opacity: 1;
+}
+
+.admin-list__badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid var(--border-glass);
+}
+
+.admin-catalog-hint {
+  margin: 0 0 0.65rem;
+  padding: 0 0.15rem;
+}
+
 .admin-list__top {
   display: flex;
   align-items: center;
@@ -1186,6 +1211,36 @@ a {
   margin-top: 0.28rem;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.admin-list__hide {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-muted);
+  background: var(--bg-footer);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.admin-list__hide:hover:not(:disabled) {
+  color: inherit;
+  border-color: var(--accent-purple);
+  background: var(--bg-hover);
+}
+
+.admin-list__hide:focus-visible {
+  outline: 2px solid var(--accent-purple-bright);
+  outline-offset: 2px;
 }
 
 .admin-list__delete {

@@ -290,7 +290,10 @@
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.json();
           })();
-      const utilities = (data.utilities || []).map(migrateUtility).filter(isValidUtility);
+      const utilities = (data.utilities || [])
+        .map(migrateUtility)
+        .filter(isValidUtility)
+        .filter((u) => !u.hidden);
       buildUtilityTargets(utilities);
     } catch (err) {
       console.error("[HyoT feedback catalog]", err);

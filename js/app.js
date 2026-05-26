@@ -50,14 +50,15 @@ function sortByUpdatedAt(items) {
   });
 }
 
-function normalizeUtilities(raw = []) {
+function normalizeUtilities(raw = [], { includeHidden = false } = {}) {
   const migrated = raw.map(migrateUtility);
   const valid = migrated.filter(isValidUtility);
-  const skipped = raw.length - valid.length;
-  if (skipped > 0) {
-    console.warn(`[HyoT] ${skipped}개 항목이 이름·설명 등 필수 정보 누락으로 제외되었습니다.`);
+  const items = includeHidden ? valid : valid.filter((u) => !u.hidden);
+  const invalidCount = raw.length - valid.length;
+  if (invalidCount > 0) {
+    console.warn(`[HyoT] ${invalidCount}개 항목이 필수 정보 누락으로 제외되었습니다.`);
   }
-  return sortByUpdatedAt(valid);
+  return sortByUpdatedAt(items);
 }
 
 function buildMetaText(item) {

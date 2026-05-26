@@ -9,7 +9,7 @@
   <title>관리자 · HyoT의 자료실</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20260527e">
+  <link rel="stylesheet" href="css/style.css?v=20260526b">
 </head>
 <body>
   <div class="page-bg" aria-hidden="true"></div>
@@ -88,6 +88,7 @@
         <div id="admin-catalog-view" class="admin-tab-panel">
         <div class="admin-layout">
           <nav class="admin-list-wrap" aria-label="등록된 자료">
+            <p class="admin-hint admin-catalog-hint">숨긴 자료는 방문자 자료실에 표시되지 않습니다. 목록에서 「숨기기」로 전환할 수 있습니다.</p>
             <ul id="admin-item-list" class="admin-list"></ul>
             <p id="admin-list-empty" class="admin-list-empty">등록된 자료가 없습니다.<br>「+ 새 자료」로 추가하세요.</p>
           </nav>
@@ -165,6 +166,7 @@
                 <span class="btn-save-progress__fill" aria-hidden="true"></span>
                 <span class="btn-save-progress__label">저장</span>
               </button>
+              <button type="button" class="admin-btn-check" id="admin-hide-btn" hidden>숨기기</button>
               <button type="button" class="admin-btn-danger" id="admin-delete-btn" hidden>삭제</button>
             </div>
           </form>
@@ -220,7 +222,7 @@
   <script src="js/admin-config.js?v=20260527d"></script>
   <script src="js/catalog-sync.js?v=20260527d"></script>
   <script src="js/platforms.js?v=20260530a"></script>
-  <script src="js/admin.js?v=20260530a" defer></script>
+  <script src="js/admin.js?v=20260526b" defer></script>
   <script src="js/admin-feedback.js" defer></script>
   <script src="js/admin-feedback-github.js?v=20260529" defer></script>
 </body>

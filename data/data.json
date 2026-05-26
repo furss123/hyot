@@ -33,11 +33,11 @@
       "id": "hantopip",
       "name": "한투핍 HanToPip",
       "description": "한글 문서를 사용자가 지정한 순서대로 PDF로 일괄 변환합니다. 여러 HWP 파일을 하나의 PDF로 병합할 수도 있고, 파일마다 개별 PDF로 저장할 수도 있습니다.",
-      "updatedAt": "2026-05-26T07:46:30.000Z",
+      "updatedAt": "2026-05-26T12:00:00.000Z",
       "windows": {
-        "file": "downloads/한투핍(HanToPip)_1.0.0.zip",
-        "fileName": "HanToPip-1.0.0.zip",
-        "fileSize": "27.4 MB"
+        "file": "downloads/한투핍(HanToPip)_1.1.0.zip",
+        "fileName": "HanToPip-1.1.0.zip",
+        "fileSize": "28 MB"
       },
       "icon": "assets/icons/hantopip-mpksdwo9.png",
       "iconUpdatedAt": "2026-05-25T05:49:30.153Z"

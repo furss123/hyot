@@ -65,6 +65,7 @@
     iconPreviewEmpty: $("admin-icon-preview-empty"),
     submitBtn: $("admin-submit-btn"),
     deleteBtn: $("admin-delete-btn"),
+    hideBtn: $("admin-hide-btn"),
     platformStatus: $("admin-platform-status"),
   };
 
@@ -265,6 +266,7 @@
     if (iconPath) out.icon = iconPath;
     if (iconUpdatedAt) out.iconUpdatedAt = iconUpdatedAt;
     else if (base?.iconUpdatedAt) out.iconUpdatedAt = base.iconUpdatedAt;
+    if (base?.hidden) out.hidden = true;
     return out;
   }
 
@@ -888,13 +890,22 @@
     const item = getItem();
 
     if (item) {
-      els.editorBadge.textContent = `수정 · ${item.name}`;
+      els.editorBadge.textContent = `수정 · ${item.name}${item.hidden ? " · 숨김" : ""}`;
       els.editorBadge.classList.add("admin-editor__badge--edit");
       els.deleteBtn.hidden = false;
+      if (els.hideBtn) {
+        els.hideBtn.hidden = false;
+        els.hideBtn.textContent = item.hidden ? "다시 표시" : "숨기기";
+        els.hideBtn.setAttribute(
+          "aria-label",
+          item.hidden ? `「${item.name}」 자료실에 다시 표시` : `「${item.name}」 자료실에서 숨기기`
+        );
+      }
     } else {
       els.editorBadge.textContent = "새 자료";
       els.editorBadge.classList.remove("admin-editor__badge--edit");
       els.deleteBtn.hidden = true;
+      if (els.hideBtn) els.hideBtn.hidden = true;
       updateIconPreview(null);
     }
     if (els.fileRequired) els.fileRequired.hidden = true;
@@ -919,6 +930,7 @@
       btn.type = "button";
       btn.className = "admin-list__item";
       if (item.id === selectedId) btn.classList.add("admin-list__item--on");
+      if (item.hidden) btn.classList.add("admin-list__item--hidden");
 
       const migrated = migrateUtility(item);
       const statsRow = getDownloadStatsRow(item.id);
@@ -931,6 +943,15 @@
       nameEl.className = "admin-list__name";
       nameEl.textContent = item.name;
 
+      if (item.hidden) {
+        const badge = document.createElement("span");
+        badge.className = "admin-list__badge";
+        badge.textContent = "숨김";
+        top.append(nameEl, badge);
+      } else {
+        top.append(nameEl);
+      }
+
       const dlEl = document.createElement("span");
       dlEl.className = "admin-list__dl";
       dlEl.title = downloadStatsTitle(statsRow);
@@ -942,7 +963,7 @@
       dlUnit.textContent = "회";
       dlEl.append(dlNum, dlUnit);
 
-      top.append(nameEl, dlEl);
+      top.append(dlEl);
 
       const metaEl = document.createElement("span");
       metaEl.className = "admin-list__meta";
@@ -955,6 +976,19 @@
       btn.append(top, metaEl, platformsEl);
       btn.addEventListener("click", () => pickItem(item.id));
 
+      const hide = document.createElement("button");
+      hide.type = "button";
+      hide.className = "admin-list__hide";
+      hide.textContent = item.hidden ? "표시" : "숨기기";
+      hide.setAttribute(
+        "aria-label",
+        item.hidden ? `「${item.name}」 다시 표시` : `「${item.name}」 숨기기`
+      );
+      hide.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleUtilityHidden(item.id);
+      });
+
       const del = document.createElement("button");
       del.type = "button";
       del.className = "admin-list__delete";
@@ -965,7 +999,7 @@
         deleteUtility(item.id);
       });
 
-      li.append(btn, del);
+      li.append(btn, hide, del);
       els.itemList.append(li);
     });
   }
@@ -1199,6 +1233,51 @@
     renderList();
   }
 
+  function utilityWithHiddenFlag(item, hidden) {
+    const next = { ...item };
+    if (hidden) next.hidden = true;
+    else delete next.hidden;
+    return migrateUtility(next);
+  }
+
+  async function toggleUtilityHidden(id) {
+    const cur = catalogData?.utilities?.find((u) => u.id === id);
+    if (!cur) return;
+
+    const willHide = !cur.hidden;
+    const name = cur.name;
+    const snapshot = catalogData.utilities.map((u) => ({ ...u }));
+    const nextList = catalogData.utilities.map((u) =>
+      u.id === id ? utilityWithHiddenFlag(u, willHide) : u
+    );
+
+    applyLocalCatalog(nextList);
+    if (selectedId === id) updateEditorUI();
+
+    try {
+      const next = await persistCatalogChange(
+        (json) => ({
+          ...json,
+          utilities: (json.utilities || []).map((u) =>
+            u.id === id ? utilityWithHiddenFlag(migrateUtility(u), willHide) : migrateUtility(u)
+          ),
+        }),
+        willHide ? `hide: ${name}` : `unhide: ${name}`
+      );
+      catalogData = {
+        ...catalogData,
+        utilities: next.utilities.map(migrateUtility),
+      };
+      renderList();
+      if (selectedId === id) updateEditorUI();
+      toast(willHide ? `「${name}」을(를) 자료실에서 숨겼습니다.` : `「${name}」을(를) 다시 표시합니다.`);
+    } catch (err) {
+      applyLocalCatalog(snapshot);
+      if (selectedId === id) updateEditorUI();
+      toast(err.message, true);
+    }
+  }
+
   async function deleteUtility(id) {
     const cur = catalogData?.utilities?.find((u) => u.id === id);
     if (!cur) return;
@@ -1238,6 +1317,12 @@
     await deleteUtility(cur.id);
   }
 
+  async function onToggleHidden() {
+    const cur = getItem();
+    if (!cur) return;
+    await toggleUtilityHidden(cur.id);
+  }
+
   els.remember.addEventListener("change", () => {
     if (!els.remember.checked) {
       els.autoLogin.checked = false;
@@ -1256,6 +1341,7 @@
   els.newBtn.addEventListener("click", pickNew);
   els.form.addEventListener("submit", onSave);
   els.deleteBtn.addEventListener("click", onDelete);
+  els.hideBtn?.addEventListener("click", onToggleHidden);
   els.icon?.addEventListener("change", onIconPick);
   els.downloadFile?.addEventListener("change", onDownloadPick);
   els.downloadManual?.addEventListener("change", updateDownloadManualUI);
