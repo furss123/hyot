@@ -16,7 +16,8 @@
         "fileSize": ""
       },
       "icon": "assets/icons/chaebi-mptk810k.png",
-      "iconUpdatedAt": "2026-05-31T09:10:54.499Z"
+      "iconUpdatedAt": "2026-05-31T09:10:54.499Z",
+      "hidden": true
     },
     {
       "id": "quickcap",
