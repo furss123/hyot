@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-30T11:26:31.684Z",
+  "updatedAt": "2026-05-31T09:11:44.189Z",
   "byId": {
     "cleanclass-1-2-0": {
       "total": 0,
@@ -43,6 +43,11 @@
       "android": 0
     },
     "cleanclass": {
+      "total": 1,
+      "windows": 1,
+      "android": 0
+    },
+    "chaebi": {
       "total": 1,
       "windows": 1,
       "android": 0
