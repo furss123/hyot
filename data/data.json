@@ -9,14 +9,14 @@
       "id": "chaebi",
       "name": "채비 Chaebi",
       "description": "Windows 바탕화면 캘린더 · 할 일·메모·D-Day",
-      "updatedAt": "2026-05-31T09:11:18.923Z",
+      "updatedAt": "2026-05-31T09:12:10.314Z",
       "windows": {
         "file": "downloads/Chaebi-1.2.0.exe",
         "fileName": "Chaebi-1.2.0.exe",
         "fileSize": ""
       },
-      "icon": "assets/icons/chaebi-mptk8juz.png",
-      "iconUpdatedAt": "2026-05-31T09:11:18.923Z"
+      "icon": "assets/icons/chaebi-mptk9nii.ico",
+      "iconUpdatedAt": "2026-05-31T09:12:10.314Z"
     },
     {
       "id": "quickcap",
