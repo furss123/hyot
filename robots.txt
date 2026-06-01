@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://furss123.github.io/hyot/sitemap.xml

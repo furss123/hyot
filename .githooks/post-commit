@@ -1,4 +1,0 @@
-#!/bin/sh
-# 커밋 직후 origin/main 자동 push
-cd "$(git rev-parse --show-toplevel)" || exit 0
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/auto-push.ps1" -PushOnly
