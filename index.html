@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HyoT의 자료실 — 업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
+  <meta name="theme-color" content="#0c0f1a">
+  <script src="js/theme-init.js"></script>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="HyoT의 자료실">
+  <meta property="og:description" content="업무용 유틸리티를 로그인 없이 무료로 다운로드하세요.">
+  <meta property="og:locale" content="ko_KR">
+  <title>HyoT의 자료실</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="css/style.css?v=20260527e">
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <div class="brand brand--site">
+        <h1 class="brand__title" id="site-title">HyoT의 자료실</h1>
+        <p class="brand__tagline" id="site-tagline">업무용 유틸리티 · 로그인 없이 무료 다운로드</p>
+      </div>
+      <div class="site-header__actions">
+        <div class="theme-switch" data-theme-switch role="radiogroup" aria-label="색상 테마">
+          <button type="button" class="theme-switch__btn is-active" data-theme-value="system" aria-pressed="true">시스템</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="light" aria-pressed="false">라이트</button>
+          <button type="button" class="theme-switch__btn" data-theme-value="dark" aria-pressed="false">다크</button>
+        </div>
+        <a href="admin.html" class="admin-btn admin-btn--link" id="admin-nav-link">관리자</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main" id="main-content">
+    <div class="container">
+      <h2 class="visually-hidden">자료 목록</h2>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <ul id="utility-grid" class="utility-grid" role="list"></ul>
+
+      <p id="empty-state" class="empty-state" hidden>등록된 자료가 없습니다. 곧 새로운 유틸리티가 추가될 예정입니다.</p>
+    </div>
+  </main>
+
+  <section class="feedback-board" id="feedback-board" aria-label="의견 남기기">
+    <div class="container">
+      <div class="feedback-board__cta" id="feedback-cta">
+        <button type="button" class="btn-download feedback-cta-btn" id="feedback-open-btn" aria-controls="feedback-compose" aria-expanded="false">
+          의견 남기기
+        </button>
+      </div>
+
+      <div id="feedback-compose" class="feedback-compose" hidden>
+      <div class="feedback-board__layout feedback-board__layout--compose">
+        <form id="feedback-form" class="feedback-form" novalidate>
+          <h3 class="feedback-form__heading">의견 남기기</h3>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">관련 프로그램 · 파일</span>
+            <select id="feedback-utility" class="feedback-field__input" required>
+              <option value="">불러오는 중…</option>
+            </select>
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">분류</span>
+            <select id="feedback-category" class="feedback-field__input" required>
+              <option value="improvement">개선사항</option>
+              <option value="bug">버그·오류</option>
+              <option value="other">기타</option>
+            </select>
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">내용</span>
+            <textarea id="feedback-body" class="feedback-field__input feedback-field__textarea" rows="5" required maxlength="1200" placeholder="어떤 문제인지, 어떤 환경(Windows 버전, 프로그램 이름 등)인지 적어 주시면 도움이 됩니다."></textarea>
+          </label>
+
+          <label class="feedback-field">
+            <span class="feedback-field__label">스크린샷 (선택)</span>
+            <input id="feedback-screenshot" class="feedback-field__input feedback-field__file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <span class="feedback-form__hint">화면 캡처 1장 · PNG/JPG/WebP · 최대 2MB (자동 압축)</span>
+          </label>
+          <div id="feedback-screenshot-preview" class="feedback-screenshot-preview" hidden>
+            <img id="feedback-screenshot-img" class="feedback-screenshot-preview__img" alt="첨부 미리보기">
+            <button type="button" class="feedback-screenshot-preview__clear" id="feedback-screenshot-clear">첨부 제거</button>
+          </div>
+
+          <p id="feedback-ready-hint" class="feedback-form__hint feedback-form__hint--ok" hidden>
+            로그인 없이 등록할 수 있습니다. 다른 이용자에게는 공개되지 않으며 관리자만 확인합니다.
+          </p>
+          <p id="feedback-setup-hint" class="feedback-form__hint" hidden>
+            게시판 등록 준비 중입니다. 관리자에게 문의해 주세요.
+          </p>
+
+          <p id="feedback-status" class="feedback-status" role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" class="btn-download feedback-form__submit" id="feedback-submit">의견 등록</button>
+        </form>
+
+        <aside class="feedback-privacy-panel" aria-label="등록 안내">
+          <h3 class="feedback-privacy-panel__heading">등록 안내</h3>
+          <ul class="feedback-privacy-panel__list">
+            <li>등록하신 의견·스크린샷은 <strong>관리자만</strong> 볼 수 있습니다.</li>
+            <li>이 페이지에는 다른 이용자의 글이 표시되지 않습니다.</li>
+            <li>등록 후 수정·삭제는 관리자에게 문의해 주세요.</li>
+          </ul>
+        </aside>
+      </div>
+      <p class="feedback-compose__actions">
+        <button type="button" class="feedback-compose__close" id="feedback-close-btn">닫기</button>
+      </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <p class="site-footer__copy">
+        Created by HyoT. Copyright © 2026 남악고등학교 HyoT. All rights reserved.
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/theme.js?v=20260524a"></script>
+  <script src="js/platforms.js?v=20260530a"></script>
+  <script src="js/admin-config.js?v=20260527d"></script>
+  <script src="js/catalog-sync.js?v=20260527d"></script>
+  <script src="js/feedback-config.js?v=20260525"></script>
+  <script src="js/download-stats.js?v=20260525"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js?v=20260525"></script>
+  <script src="js/firebase-feedback.js?v=20260525"></script>
+  <script src="js/feedback-auth.js?v=20260526"></script>
+  <script src="js/feedback-relay.js?v=20260526"></script>
+  <script src="js/feedback.js?v=20260527d" defer></script>
+  <script src="js/app.js?v=20260526b" defer></script>
+  <script>
+    if (sessionStorage.getItem("hyot_admin_session") === "1") {
+      const link = document.getElementById("admin-nav-link");
+      if (link) {
+        link.classList.add("admin-btn--active");
+        link.textContent = "관리자 ✓";
+        link.setAttribute("aria-label", "관리자 (로그인됨)");
+      }
+    }
+  </script>
+</body>
+</html>
