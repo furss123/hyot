@@ -1,4 +1,4 @@
-name = "hyot-feedback"
+name = "hyot"
 main = "worker/src/index.js"
 compatibility_date = "2024-11-01"
 
